@@ -1,0 +1,2499 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>韭菜養成所：少年股神的一生 (v8.9 倉位精確小數點版)</title>
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@700;900&display=swap');
+
+    :root {
+      --bg-dark: #070a12;
+      --panel-dark: #0e1424;
+      --card-bg: #141d33;
+      --anime-yellow: #ffe600;
+      --anime-gold: #ffaa00;
+      --anime-red: #ff2a4b;     /* 台股紅漲 */
+      --anime-green: #00e676;   /* 台股綠跌 */
+      --anime-brown: #d97706;   /* 緊張棕 */
+      --anime-cyan: #00e5ff;
+      --anime-purple: #b388ff;
+      --border-thick: 3px solid #000;
+      --shadow-pop: 4px 4px 0px #000;
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+      font-family: 'Noto Sans TC', sans-serif;
+      user-select: none;
+    }
+
+    html, body {
+      width: 100vw;
+      height: 100vh;
+      overflow: hidden;
+      background-color: var(--bg-dark);
+      color: #fff;
+    }
+
+    .screen-container {
+      width: 100vw;
+      height: 100vh;
+      display: flex;
+      flex-direction: column;
+      background: var(--bg-dark);
+      padding: 8px 12px;
+      gap: 8px;
+    }
+
+    .top-live-bar {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      background: linear-gradient(90deg, #1b2438, #0e1424);
+      border: var(--border-thick);
+      border-radius: 12px;
+      padding: 8px 16px;
+      box-shadow: var(--shadow-pop);
+      flex-shrink: 0;
+    }
+    .streamer-pill {
+      background: var(--anime-red);
+      color: #fff;
+      font-size: 1.25rem;
+      font-weight: 900;
+      padding: 4px 16px;
+      border-radius: 50px;
+      border: 2px solid #000;
+      box-shadow: 2px 2px 0px #000;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    .top-actions {
+      display: flex;
+      gap: 10px;
+    }
+    .btn-top {
+      background: var(--anime-yellow);
+      color: #000;
+      font-size: 1.05rem;
+      font-weight: 900;
+      border: 2px solid #000;
+      padding: 6px 16px;
+      border-radius: 8px;
+      cursor: pointer;
+      box-shadow: 2px 2px 0px #000;
+      transition: transform 0.1s;
+    }
+    .btn-top:active {
+      transform: translate(2px, 2px);
+      box-shadow: 0 0 0;
+    }
+
+    .stage-body {
+      display: grid;
+      grid-template-columns: 1fr 340px;
+      gap: 10px;
+      flex-grow: 1;
+      min-height: 0;
+    }
+
+    .left-zone {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+      min-height: 0;
+    }
+
+    .metrics-dashboard {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 8px;
+      flex-shrink: 0;
+    }
+    .metric-card {
+      background: var(--panel-dark);
+      border: var(--border-thick);
+      border-radius: 10px;
+      padding: 6px 8px;
+      text-align: center;
+      box-shadow: var(--shadow-pop);
+      position: relative;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+    }
+    .metric-title {
+      font-size: 0.95rem;
+      font-weight: 900;
+      color: #94a3b8;
+      margin-bottom: 2px;
+    }
+    .metric-value {
+      font-size: 1.45rem;
+      font-weight: 900;
+      letter-spacing: 0.5px;
+    }
+
+    .ecg-card {
+      background: #020712;
+      border: var(--border-thick);
+      border-radius: 10px;
+      padding: 4px 6px;
+      box-shadow: var(--shadow-pop);
+      position: relative;
+      overflow: hidden;
+      display: flex;
+      flex-direction: column;
+      transition: border-color 0.3s;
+    }
+    .ecg-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      font-size: 0.8rem;
+      font-weight: 900;
+      color: var(--anime-green);
+      margin-bottom: 2px;
+    }
+    .ecg-canvas-wrap {
+      flex-grow: 1;
+      width: 100%;
+      height: 38px;
+      position: relative;
+    }
+    #ecg-canvas {
+      width: 100%;
+      height: 100%;
+      display: block;
+    }
+
+    .chart-panel {
+      background: #020610;
+      border: var(--border-thick);
+      border-radius: 12px;
+      padding: 8px 12px;
+      box-shadow: var(--shadow-pop);
+      display: flex;
+      flex-direction: column;
+      flex-grow: 1;
+      min-height: 0;
+    }
+    .chart-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 4px;
+      flex-shrink: 0;
+    }
+    .stock-focus-title {
+      font-size: 1.25rem;
+      font-weight: 900;
+      color: var(--anime-yellow);
+    }
+    .day-focus-title {
+      font-size: 1.15rem;
+      font-weight: 900;
+      color: #fff;
+    }
+    .canvas-wrap {
+      flex-grow: 1;
+      position: relative;
+      min-height: 0;
+    }
+    #kline {
+      position: absolute;
+      top: 0; left: 0;
+      width: 100%;
+      height: 100%;
+      display: block;
+    }
+
+    .stocks-bar-container {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      background: var(--panel-dark);
+      border: var(--border-thick);
+      border-radius: 10px;
+      padding: 6px 10px;
+      box-shadow: var(--shadow-pop);
+      flex-shrink: 0;
+      overflow-x: auto;
+    }
+    .stock-chip {
+      background: #1e293b;
+      color: #fff;
+      font-size: 0.9rem;
+      font-weight: 900;
+      border: 2px solid #000;
+      padding: 5px 12px;
+      border-radius: 20px;
+      cursor: pointer;
+      white-space: nowrap;
+      transition: all 0.1s;
+    }
+    .stock-chip.active {
+      background: var(--anime-yellow);
+      color: #000;
+      box-shadow: 2px 2px 0px #000;
+      transform: translateY(-2px);
+    }
+    .stock-dropdown-select {
+      background: #1e293b;
+      color: var(--anime-cyan);
+      font-size: 0.92rem;
+      font-weight: 900;
+      border: 2px solid #000;
+      padding: 6px 10px;
+      border-radius: 12px;
+      outline: none;
+      cursor: pointer;
+      box-shadow: 2px 2px 0px #000;
+      margin-left: auto;
+      white-space: nowrap;
+    }
+
+    .speech-bubble {
+      background: #fff;
+      color: #000;
+      border: var(--border-thick);
+      border-radius: 10px;
+      padding: 8px 14px;
+      font-size: 1.15rem;
+      font-weight: 900;
+      line-height: 1.45;
+      box-shadow: var(--shadow-pop);
+      flex-shrink: 0;
+      min-height: 52px;
+      display: flex;
+      align-items: center;
+      transition: background 0.3s, border-color 0.3s;
+    }
+
+    .trade-control-panel {
+      background: var(--panel-dark);
+      border: var(--border-thick);
+      border-radius: 12px;
+      padding: 8px 14px;
+      box-shadow: var(--shadow-pop);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      flex-shrink: 0;
+    }
+    .trade-amount-badge-wrap {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    .trade-amount-title {
+      font-size: 1.05rem;
+      font-weight: 900;
+      color: var(--anime-yellow);
+      white-space: nowrap;
+    }
+    .trade-amount-display {
+      background: #020617;
+      color: var(--anime-cyan);
+      font-size: 1.4rem;
+      font-weight: 900;
+      padding: 4px 14px;
+      border-radius: 8px;
+      border: 2px solid #334155;
+      min-width: 130px;
+      text-align: right;
+      letter-spacing: 0.5px;
+    }
+    .quick-tag-row {
+      display: flex;
+      gap: 6px;
+      flex-wrap: wrap;
+    }
+    .btn-quick-val {
+      background: #1e293b;
+      color: #fff;
+      font-size: 0.9rem;
+      font-weight: 900;
+      border: 2px solid #000;
+      padding: 5px 10px;
+      border-radius: 8px;
+      cursor: pointer;
+      box-shadow: 2px 2px 0px #000;
+      transition: all 0.1s;
+    }
+    .btn-quick-val:hover { background: #334155; }
+    .btn-quick-val:active {
+      transform: translate(2px, 2px);
+      box-shadow: 0 0 0;
+    }
+
+    .action-button-grid {
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+      flex-shrink: 0;
+    }
+    .act-row {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 8px;
+    }
+    .btn-action-giant {
+      border: var(--border-thick);
+      border-radius: 10px;
+      padding: 8px;
+      font-size: 1.15rem;
+      font-weight: 900;
+      color: #fff;
+      cursor: pointer;
+      text-shadow: 1px 1px 0px #000;
+      box-shadow: var(--shadow-pop);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 2px;
+      transition: all 0.1s;
+    }
+    .btn-action-giant span {
+      font-size: 0.8rem;
+      font-weight: 700;
+      opacity: 0.9;
+    }
+    .btn-action-giant:active:not(:disabled) {
+      transform: translate(2px, 2px);
+      box-shadow: 0 0 0;
+    }
+    .btn-action-giant:disabled {
+      opacity: 0.35;
+      cursor: not-allowed;
+      filter: grayscale(0.8);
+      box-shadow: none;
+    }
+    .btn-long-g { background: linear-gradient(135deg, #ff2a4b, #d90429); }
+    .btn-short-g { background: linear-gradient(135deg, #00e676, #009944); color: #000; text-shadow: none; }
+    .btn-tp-g { background: linear-gradient(135deg, #00e5ff, #0088cc); color: #000; text-shadow: none; }
+    .btn-sl-g { background: linear-gradient(135deg, #f59e0b, #d97706); color: #000; text-shadow: none; }
+    .btn-chat-g { background: linear-gradient(135deg, #ff9100, #ff6d00); color: #000; text-shadow: none; }
+
+    .market-row {
+      display: flex;
+      gap: 8px;
+      background: #020610;
+      border: var(--border-thick);
+      border-radius: 8px;
+      padding: 6px 10px;
+      align-items: center;
+      flex-shrink: 0;
+      overflow-x: auto;
+    }
+    .market-label {
+      font-size: 0.9rem;
+      font-weight: 900;
+      color: var(--anime-yellow);
+      white-space: nowrap;
+    }
+    .btn-market-chip {
+      background: #2e1065;
+      color: #e9d5ff;
+      border: 2px solid #000;
+      font-size: 0.85rem;
+      font-weight: 900;
+      padding: 4px 10px;
+      border-radius: 6px;
+      cursor: pointer;
+      white-space: nowrap;
+      box-shadow: 2px 2px 0px #000;
+    }
+
+    .right-zone {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+      min-height: 0;
+    }
+    .avatar-big-box {
+      background: var(--panel-dark);
+      border: var(--border-thick);
+      border-radius: 12px;
+      padding: 12px;
+      box-shadow: var(--shadow-pop);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      flex-shrink: 0;
+      position: relative;
+    }
+    .avatar-svg-container {
+      width: 140px;
+      height: 140px;
+      border-radius: 50%;
+      border: 4px solid #000;
+      background: #1e2842;
+      box-shadow: 4px 4px 0px #000;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      overflow: hidden;
+      margin-bottom: 6px;
+    }
+    .avatar-badge-title {
+      background: #000;
+      color: var(--anime-yellow);
+      font-size: 1.15rem;
+      font-weight: 900;
+      padding: 4px 16px;
+      border-radius: 20px;
+      border: 2px solid #fff;
+      box-shadow: 2px 2px 0px #000;
+    }
+
+    .chat-big-card {
+      background: var(--panel-dark);
+      border: var(--border-thick);
+      border-radius: 12px;
+      padding: 10px;
+      box-shadow: var(--shadow-pop);
+      display: flex;
+      flex-direction: column;
+      flex-grow: 1;
+      min-height: 0;
+    }
+    .chat-card-title {
+      font-size: 0.95rem;
+      font-weight: 900;
+      color: var(--anime-cyan);
+      border-bottom: 2px dashed #334155;
+      padding-bottom: 4px;
+      margin-bottom: 6px;
+      flex-shrink: 0;
+    }
+    .chat-scroll-area {
+      flex-grow: 1;
+      overflow-y: auto;
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+      min-height: 0;
+    }
+    .chat-line {
+      font-size: 0.95rem;
+      font-weight: 800;
+      line-height: 1.4;
+      word-break: break-all;
+    }
+    .chat-author {
+      color: var(--anime-yellow);
+      font-weight: 900;
+      margin-right: 4px;
+    }
+
+    .overlay-modal-fullscreen {
+      position: fixed;
+      top: 0; left: 0; right: 0; bottom: 0;
+      background: rgba(4, 7, 15, 0.95);
+      z-index: 100;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      padding: 24px;
+      backdrop-filter: blur(6px);
+    }
+    .giant-modal-card {
+      background: #fff;
+      color: #000;
+      border: 5px solid #000;
+      border-radius: 20px;
+      padding: 28px 24px;
+      max-width: 680px;
+      width: 100%;
+      max-height: 92vh;
+      overflow-y: auto;
+      box-shadow: 12px 12px 0px #000;
+      text-align: left;
+    }
+    .giant-modal-title {
+      font-size: 2.2rem;
+      font-weight: 900;
+      text-align: center;
+      color: var(--anime-red);
+      text-shadow: 2px 2px 0px #000;
+      margin-bottom: 12px;
+      letter-spacing: 1px;
+    }
+    .btn-giant-cta {
+      background: linear-gradient(135deg, var(--anime-yellow), #f59e0b);
+      color: #000;
+      border: 4px solid #000;
+      padding: 12px 40px;
+      font-size: 1.4rem;
+      font-weight: 900;
+      border-radius: 50px;
+      cursor: pointer;
+      display: block;
+      margin: 16px auto 0 auto;
+      box-shadow: 6px 6px 0px #000;
+      transition: all 0.1s;
+    }
+    .btn-giant-cta:active {
+      transform: translate(3px, 3px);
+      box-shadow: 1px 1px 0px #000;
+    }
+
+    .streamlined-pnl-card {
+      background: #f8fafc;
+      border: 4px solid #000;
+      border-radius: 16px;
+      padding: 16px 20px;
+      text-align: center;
+      margin-bottom: 14px;
+      box-shadow: 6px 6px 0px #000;
+    }
+    .streamlined-pnl-label {
+      font-size: 1.05rem;
+      font-weight: 900;
+      color: #475569;
+    }
+    .streamlined-pnl-num {
+      font-size: 2.8rem;
+      font-weight: 900;
+      line-height: 1.2;
+      margin-top: 4px;
+      letter-spacing: 1px;
+    }
+
+    .clean-reason-banner {
+      background: #fff;
+      border: 4px solid #000;
+      border-radius: 16px;
+      padding: 20px;
+      display: flex;
+      align-items: center;
+      gap: 18px;
+      box-shadow: 6px 6px 0px #000;
+    }
+    .clean-reason-icon {
+      font-size: 4.5rem;
+      flex-shrink: 0;
+      filter: drop-shadow(2px 2px 0px #000);
+    }
+    .clean-reason-content {
+      flex-grow: 1;
+    }
+    .clean-reason-badge {
+      display: inline-block;
+      font-size: 0.95rem;
+      font-weight: 900;
+      padding: 3px 10px;
+      border-radius: 6px;
+      color: #fff;
+      margin-bottom: 6px;
+      border: 2px solid #000;
+    }
+    .clean-reason-text {
+      font-size: 1.3rem;
+      font-weight: 900;
+      color: #0f172a;
+      line-height: 1.5;
+    }
+
+    .cutscene-fullscreen {
+      position: fixed;
+      top: 0; left: 0; right: 0; bottom: 0;
+      background: #02040a;
+      z-index: 120;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      align-items: center;
+      padding: 24px;
+    }
+    .cutscene-skip {
+      position: absolute;
+      top: 24px;
+      right: 28px;
+      background: var(--anime-yellow);
+      color: #000;
+      border: 3.5px solid #000;
+      padding: 10px 24px;
+      border-radius: 40px;
+      font-weight: 900;
+      font-size: 1.2rem;
+      cursor: pointer;
+      box-shadow: 4px 4px 0px #000;
+      z-index: 130;
+    }
+    .cutscene-manga-frame {
+      width: 100%;
+      max-width: 780px;
+      background: #fff;
+      border: 5px solid #000;
+      border-radius: 20px;
+      box-shadow: 12px 12px 0px #000;
+      overflow: hidden;
+      display: flex;
+      flex-direction: column;
+    }
+    .cutscene-art-box {
+      width: 100%;
+      height: 300px;
+      background: #f8fafc;
+      border-bottom: 4px solid #000;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      overflow: hidden;
+    }
+    .cutscene-caption-box {
+      padding: 22px 28px;
+      background: #fff;
+      color: #000;
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+    }
+
+    .giant-alert-card {
+      background: #fff;
+      color: #000;
+      border: 6px solid #ff2a4b;
+      border-radius: 24px;
+      padding: 36px 28px;
+      max-width: 580px;
+      width: 92%;
+      text-align: center;
+      box-shadow: 14px 14px 0px #000;
+      animation: alertPop 0.18s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+    }
+    @keyframes alertPop {
+      from { transform: scale(0.6); opacity: 0; }
+      to { transform: scale(1); opacity: 1; }
+    }
+
+    .pure-white-flash {
+      position: fixed;
+      top: 0; left: 0; right: 0; bottom: 0;
+      background: #ffffff;
+      z-index: 150;
+      pointer-events: none;
+      opacity: 0;
+      transition: opacity 0.35s ease-out;
+    }
+
+    .shake-manga { animation: shakeManga 0.35s both; }
+    @keyframes shakeManga {
+      10%, 90% { transform: translate3d(-5px, 0, 0); }
+      20%, 80% { transform: translate3d(6px, 0, 0); }
+      30%, 50%, 70% { transform: translate3d(-7px, 0, 0); }
+      40%, 60% { transform: translate3d(7px, 0, 0); }
+    }
+
+    .margin-call-overlay {
+      position: fixed;
+      top: 0; left: 0; right: 0; bottom: 0;
+      background: rgba(255, 0, 0, 0.45);
+      z-index: 250;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      padding: 24px;
+      backdrop-filter: blur(8px);
+      animation: callFlash 0.5s infinite alternate;
+    }
+    @keyframes callFlash {
+      from { background: rgba(255, 0, 0, 0.35); }
+      to { background: rgba(0, 0, 0, 0.85); }
+    }
+    .call-card {
+      background: #fff;
+      color: #000;
+      border: 6px solid #ff2a4b;
+      border-radius: 24px;
+      padding: 40px 32px;
+      max-width: 620px;
+      width: 94%;
+      text-align: center;
+      box-shadow: 16px 16px 0px #000;
+    }
+
+    .custom-stock-modal {
+      position: fixed;
+      top: 0; left: 0; right: 0; bottom: 0;
+      background: rgba(4, 7, 15, 0.95);
+      z-index: 200;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      padding: 24px;
+      backdrop-filter: blur(8px);
+    }
+    .custom-stock-card {
+      background: #fff;
+      color: #000;
+      border: 6px solid #000;
+      border-radius: 24px;
+      padding: 36px 32px;
+      max-width: 560px;
+      width: 100%;
+      text-align: center;
+      box-shadow: 14px 14px 0px #000;
+    }
+    .modal-text-input {
+      background: #f8fafc;
+      color: #000;
+      font-size: 1.4rem;
+      font-weight: 900;
+      border: 3px solid #000;
+      border-radius: 8px;
+      padding: 8px 14px;
+      width: 100%;
+      outline: none;
+    }
+    .modal-text-input:focus {
+      border-color: var(--anime-red);
+    }
+  </style>
+</head>
+<body>
+
+  <div class="screen-container" id="screen-container">
+    
+    <div class="top-live-bar">
+      <div class="streamer-pill">
+        <span>🔥 LIVE</span>
+        <span id="player-display-tag">實況主: 待命名</span>
+      </div>
+      <div class="top-actions">
+        <button class="btn-top" onclick="showTutorial()">📖 韭菜秘笈</button>
+        <button class="btn-top" onclick="toggleAudio()" id="audio-toggle">🔊 音樂: 開</button>
+      </div>
+    </div>
+
+    <div class="stage-body">
+      <div class="left-zone">
+        <div class="metrics-dashboard">
+          <div class="metric-card">
+            <div class="metric-title">總戰鬥資產</div>
+            <div class="metric-value" id="val-total" style="color: var(--anime-cyan);">$1,000,000</div>
+          </div>
+          <div class="metric-card">
+            <div class="metric-title">可用現金 / 倉位</div>
+            <div class="metric-value" id="val-cash-pos" style="font-size: 1.15rem;">$1,000,000 / 0.0%</div>
+          </div>
+          <div class="metric-card">
+            <div class="metric-title">未實現損益</div>
+            <div class="metric-value" id="val-unrealized" style="color: #94a3b8;">$0 (0.0%)</div>
+          </div>
+          <div class="ecg-card" id="ecg-card-box">
+            <div class="ecg-header">
+              <span id="ecg-state-tag">ECG [平穩]</span>
+              <span id="ecg-bpm" style="font-size: 0.9rem;">72 BPM</span>
+            </div>
+            <div class="ecg-canvas-wrap">
+              <canvas id="ecg-canvas"></canvas>
+            </div>
+          </div>
+        </div>
+
+        <div class="chart-panel">
+          <div class="chart-header">
+            <span class="stock-focus-title" id="chart-stock-label">標的: 0050 元大台灣50</span>
+            <span class="day-focus-title" id="chart-day">剩餘: 30 / 30 交易日</span>
+          </div>
+          <div class="canvas-wrap" id="canvas-wrap">
+            <canvas id="kline"></canvas>
+          </div>
+        </div>
+
+        <div class="stocks-bar-container">
+          <button class="stock-chip active" id="chip-0050" onclick="switchStockDirect('0050')">0050 元大台灣50</button>
+          <button class="stock-chip" id="chip-00981A" onclick="switchStockDirect('00981A')">00981A 主動式妖ETF</button>
+          <button class="stock-chip" id="chip-2330" onclick="switchStockDirect('2330')">2330 台積電</button>
+          <button class="stock-chip" id="chip-2609" onclick="switchStockDirect('2609')">2609 陽明</button>
+          <button class="stock-chip" id="chip-4743" onclick="switchStockDirect('4743')">4743 合一</button>
+          <button class="stock-chip" id="chip-2327" onclick="switchStockDirect('2327')">2327 國巨</button>
+          <button class="stock-chip" id="chip-3081" onclick="switchStockDirect('3081')">3081 聯亞</button>
+          <button class="stock-chip" id="chip-2454" onclick="switchStockDirect('2454')">2454 聯發科</button>
+          <button class="stock-chip" id="chip-2753" onclick="switchStockDirect('2753')">2753 八方雲集</button>
+          
+          <select class="stock-dropdown-select" id="stock-dropdown" onchange="handleDropdownChange(this.value)">
+            <option value="" disabled selected>📂 更多全明星股票...</option>
+            <option value="1213">1213 大飲</option>
+            <option value="2002">2002 中鋼</option>
+            <option value="2059">2059 川湖</option>
+            <option value="2359">2359 所羅門</option>
+            <option value="2409">2409 友達</option>
+            <option value="2412">2412 中華電</option>
+            <option value="2498">2498 宏達電</option>
+            <option value="3163">3163 波若威</option>
+            <option value="3231">3231 緯創</option>
+            <option value="6770">6770 力積電</option>
+            <option value="00940">00940 價值高息</option>
+            <option value="YAO">YAO 主力妖股</option>
+            <option value="CUSTOM" style="color: var(--anime-yellow); font-weight: bold;">🎁 [觀眾自訂股票]...</option>
+          </select>
+        </div>
+
+        <div class="speech-bubble" id="event-desc">
+          百萬本金就緒！30 個交易日決戰台股。每次鎖定一檔標的單挑，隨時可用按鈕調節建倉金額！
+        </div>
+
+        <!-- 支援 -10萬 調節與金額加減的控制面板 (v8.9 倉位精確版) -->
+        <div class="trade-control-panel">
+          <div class="trade-amount-badge-wrap">
+            <span class="trade-amount-title">建倉下單金額:</span>
+            <span class="trade-amount-display" id="display-order-amount">$300,000</span>
+          </div>
+          <div class="quick-tag-row">
+            <button class="btn-quick-val" style="background: #991b1b; color: #fff;" onclick="addBuyAmount(-100000)">-10萬</button>
+            <button class="btn-quick-val" onclick="addBuyAmount(100000)">+10萬</button>
+            <button class="btn-quick-val" onclick="addBuyAmount(500000)">+50萬</button>
+            <button class="btn-quick-val" onclick="setBuyRatio(0.5)">半倉</button>
+            <button class="btn-quick-val" style="background: var(--anime-red); color: #fff;" onclick="setBuyRatio(1.0)">🔥 歐印</button>
+          </div>
+        </div>
+
+        <div class="action-button-grid">
+          <div class="act-row">
+            <button class="btn-action-giant btn-long-g" id="btn-buy-long" onclick="tradeStock('long')">
+              🔥 不上車一輩子撿角
+              <span>依上方設定金額建倉做多！</span>
+            </button>
+            <button class="btn-action-giant btn-short-g" id="btn-buy-short" onclick="tradeStock('short')">
+              📉 空軍總司令開扁
+              <span>依上方設定金額融券放空！</span>
+            </button>
+          </div>
+
+          <div class="act-row">
+            <button class="btn-action-giant btn-tp-g" id="btn-sell-half" onclick="exitStockQuick(0.5)">
+              💰 賣出一半 (50%)
+              <span>減碼一半持倉落袋為安</span>
+            </button>
+            <button class="btn-action-giant btn-sl-g" id="btn-sell-all" onclick="exitStockQuick(1.0)">
+              🩸 全數出清 (100%)
+              <span>全部持倉一鍵變現換回現金！</span>
+            </button>
+          </div>
+
+          <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 8px;">
+            <button class="btn-action-giant btn-chat-g" onclick="triggerChatGamble()">
+              🎲 甩鍋給聊天室盲選
+              <span>讓粉絲幫台主決定命運！</span>
+            </button>
+            <button class="btn-action-giant" style="background: #334155;" onclick="passDay()">
+              🛌 刪 App 裝死一天
+              <span>只要不看就不算虧錢！</span>
+            </button>
+          </div>
+        </div>
+
+        <div class="market-row">
+          <span class="market-label">號子黑市:</span>
+          <button class="btn-market-chip" onclick="useShopItem('coffee')">☕ 冰美式+降壓藥 (心跳平復) $15,000</button>
+          <button class="btn-market-chip" onclick="useShopItem('cable')">🔌 物理拔網路線 (跳過追繳結算) $30,000</button>
+          <button class="btn-market-chip" style="background: #7f1d1d; color: #fecaca;" onclick="useHighInterestLoan()">💸 地下錢莊借 $50萬 (年息87%)</button>
+        </div>
+      </div>
+
+      <div class="right-zone">
+        <div class="avatar-big-box">
+          <div class="avatar-svg-container" id="anime-portrait-box"></div>
+          <div class="avatar-badge-title" id="face-status">波瀾不驚</div>
+        </div>
+
+        <div class="chat-big-card">
+          <div class="chat-card-title">💬 CHAT STREAM (觀眾彈幕)</div>
+          <div class="chat-scroll-area" id="chat-box">
+            <div class="chat-line"><span class="chat-author">熱血肥宅:</span> 開台啦！手握百萬看台主能撐幾天！</div>
+            <div class="chat-line"><span class="chat-author">航海王阿明:</span> 今天盤面起伏超大，動不動就天地針！</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- 彈窗 1：遊戲開始選單 -->
+    <div class="overlay-modal-fullscreen" id="start-modal">
+      <div class="giant-modal-card" style="text-align: center;">
+        <div class="giant-modal-title">🥬 韭菜養成所</div>
+        <div style="font-size: 1.45rem; font-weight: 900; color: #1e293b; margin-bottom: 16px;">
+          少年股神的一生 · 賭徒單挑極速版
+        </div>
+        <p style="font-size: 1.2rem; font-weight: 800; color: #475569; margin-bottom: 24px; line-height: 1.6;">
+          手握 <b style="color: var(--anime-red); font-size: 1.35rem;">100 萬元</b> 本金踏入台股修羅場！<br>
+          你有 <b>整整 30 個交易日</b> 的極速時間挑戰世界首富！<br>
+          按鈕隨時加減金額、一鍵出清換現金！若維持率過低將面臨斷頭追繳！<br>
+          <b style="color: var(--anime-red);">實名制開台：請親自輸入實況 ID 才能進行！</b>
+        </p>
+        <div style="font-size: 1.15rem; font-weight: 900; color: var(--anime-red); margin-bottom: 8px;">
+          請輸入實況主或熱血主角名稱 (不可空白)：
+        </div>
+        <input type="text" class="modal-text-input" style="max-width: 380px; margin: 0 auto 20px auto; display: block; text-align: center;" id="streamer-name-input" placeholder="請在此輸入你的實況 ID..." value="" />
+        <div style="display: flex; justify-content: center; gap: 16px;">
+          <button class="btn-giant-cta" style="margin: 0;" onclick="startMangaIntroCutscene()">開始冒險 🚀</button>
+          <button class="btn-top" style="font-size: 1.25rem; padding: 12px 28px;" onclick="showTutorial()">新手教學</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- 彈窗 2：開場動畫 -->
+    <div class="cutscene-fullscreen" id="intro-story-modal" style="display: none;">
+      <button class="cutscene-skip" onclick="finishIntroCutscene()">跳過動畫 (Skip) ⏩</button>
+      
+      <div class="cutscene-manga-frame">
+        <div class="cutscene-art-box" id="manga-art-panel"></div>
+        <div class="cutscene-caption-box">
+          <div style="font-size: 1.15rem; font-weight: 900; color: var(--anime-red);" id="manga-step-label">ACT 1 / 4</div>
+          <div style="font-size: 1.45rem; font-weight: 900; line-height: 1.6;" id="manga-story-text">故事文字載入中...</div>
+          <button class="btn-giant-cta" style="margin: 10px 0 0 0; padding: 10px 36px; font-size: 1.25rem; align-self: flex-end;" onclick="nextMangaScene()">
+            點擊繼續 ▶
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <div class="pure-white-flash" id="white-flash-layer"></div>
+
+    <!-- 彈窗 3：新手教學指南 -->
+    <div class="overlay-modal-fullscreen" id="tutorial-modal" style="display: none;">
+      <div class="giant-modal-card">
+        <div class="giant-modal-title" style="color: var(--anime-cyan);">📖 韭菜生存新手指南</div>
+        <div style="font-size: 1.15rem; font-weight: 800; color: #334155; display: flex; flex-direction: column; gap: 14px; line-height: 1.6;">
+          <p><b>1. 精確小數點倉位：</b> 隨時掌握精確到小數點第一位的部位配置比例！</p>
+          <p><b>2. 100% 絕對賣得掉：</b> 滿倉歐印後可隨時點擊「賣出一半」或「全數出清」，所得直接換回現金！</p>
+          <p><b>3. 現金防負保護：</b> 沒錢時下單按鈕自動反灰，現金絕不變負數！</p>
+          <p><b>4. 營業員追繳電話 (Margin Call)：</b> 總資產跌破 30 萬時，營業員小美會打電話來奪命連環摳！</p>
+        </div>
+        <button class="btn-giant-cta" onclick="closeTutorial()">我完全明白了！</button>
+      </div>
+    </div>
+
+    <!-- 彈窗 4：極簡一目了然盤後戰報 -->
+    <div class="overlay-modal-fullscreen" id="daily-event-modal" style="display: none; z-index: 180;">
+      <div class="giant-modal-card" id="daily-event-card" style="border: 5px solid #000; box-shadow: 10px 10px 0px #000;">
+        
+        <div class="streamlined-pnl-card" id="daily-pnl-banner">
+          <div class="streamlined-pnl-label" id="daily-pnl-label">昨日至今日戰鬥損益</div>
+          <div class="streamlined-pnl-num" id="daily-pnl-value">+$0 (0.0%)</div>
+        </div>
+
+        <div class="clean-reason-banner" id="clean-reason-box">
+          <div class="clean-reason-icon" id="clean-reason-icon">🍱</div>
+          <div class="clean-reason-content">
+            <span class="clean-reason-badge" id="clean-reason-badge" style="background: var(--anime-red);">大跌真相</span>
+            <div class="clean-reason-text" id="clean-reason-text">加載操盤真相中...</div>
+          </div>
+        </div>
+
+        <button class="btn-giant-cta" id="daily-event-btn" style="margin-top: 20px;" onclick="closeDailyEvent()">迎接下一天 ▶</button>
+      </div>
+    </div>
+
+    <!-- 彈窗 5：重大事件彈窗 -->
+    <div class="overlay-modal-fullscreen" id="major-event-modal" style="display: none; z-index: 185;">
+      <div class="giant-modal-card" style="border: 6px solid #ff2a4b; box-shadow: 14px 14px 0px #000;" id="major-modal-card">
+        <div style="font-size: 1.25rem; color: #ff2a4b; font-weight: 900; text-align: center; letter-spacing: 2px;" id="major-event-headline">
+          🚨 全球金融核彈突襲 🚨
+        </div>
+        <div style="font-size: 5.5rem; text-align: center; margin: 6px 0;" id="major-event-img">💣</div>
+        <div style="font-size: 2rem; font-weight: 900; color: #000; text-align: center; margin: 6px 0;" id="major-event-title">重大事件標題</div>
+        <div style="font-size: 1.25rem; font-weight: 800; color: #1e293b; line-height: 1.6; background: #fee2e2; border: 3px dashed #ff2a4b; padding: 18px; border-radius: 12px;" id="major-event-desc">
+          事件說明...
+        </div>
+        <div style="font-size: 1.15rem; color: var(--anime-red); margin-top: 14px; text-align: center; font-weight: 900;" id="major-event-impact">
+          盤面衝擊預警：大盤即將暴動！
+        </div>
+        <button class="btn-giant-cta" id="major-event-btn" style="margin-top: 18px; background: linear-gradient(135deg, #ff2a4b, #b91c1c); color: #fff;" onclick="acknowledgeMajorEvent()">
+          正面迎擊，準備開盤！💥
+        </button>
+      </div>
+    </div>
+
+    <!-- 彈窗 6：警報視窗 -->
+    <div class="overlay-modal-fullscreen" id="custom-alert-modal" style="display: none; z-index: 300;">
+      <div class="giant-alert-card">
+        <div style="font-size: 4.5rem; margin-bottom: 4px;">⚠️</div>
+        <div style="font-size: 2.2rem; font-weight: 900; color: #ff2a4b; margin-bottom: 12px;" id="custom-alert-title">輸入錯誤警報</div>
+        <div style="font-size: 1.55rem; font-weight: 900; color: #1e293b; line-height: 1.6; margin-bottom: 24px;" id="custom-alert-msg">提示訊息內容</div>
+        <button class="btn-giant-cta" style="margin: 0 auto;" onclick="closeCustomAlert()">
+          我知道了！我不皮了！
+        </button>
+      </div>
+    </div>
+
+    <!-- 彈窗 7：營業員來電追繳警報 -->
+    <div class="margin-call-overlay" id="margin-call-modal" style="display: none; z-index: 250;">
+      <div class="call-card">
+        <div style="font-size: 4.5rem; margin-bottom: 6px;">📞💥</div>
+        <div style="font-size: 2.2rem; font-weight: 900; color: #ff2a4b; margin-bottom: 12px;">營業員 (小美) 來電追繳！</div>
+        <div style="font-size: 1.35rem; font-weight: 900; color: #1e293b; line-height: 1.6; margin-bottom: 24px;" id="margin-call-msg">
+          「魏先生／張先生，您的帳戶維持率已經掉到 125% 以下囉！明天中午前沒補 20 萬現金進來，我們就要強制斷頭砍倉囉～啾咪♥」
+        </div>
+        <button class="btn-giant-cta" style="margin: 0 auto; background: var(--anime-red); color: #fff;" onclick="closeMarginCall()">
+          掛斷電話，裝死到底！📞❌
+        </button>
+      </div>
+    </div>
+
+    <!-- 彈窗 8：專屬正中央「觀眾自訂股票」超大醒目彈窗 -->
+    <div class="custom-stock-modal" id="custom-stock-input-modal" style="display: none; z-index: 200;">
+      <div class="custom-stock-card">
+        <div style="font-size: 3.5rem; margin-bottom: 8px;">🎁</div>
+        <div style="font-size: 2.1rem; font-weight: 900; color: #000; margin-bottom: 20px;">
+          觀眾自訂股票建立中心
+        </div>
+        
+        <div style="text-align: left; margin-bottom: 16px;">
+          <label style="font-size: 1.15rem; font-weight: 900; color: #475569; display: block; margin-bottom: 6px;">
+            請輸入股票代號 (例: 8888、9999)：
+          </label>
+          <input type="text" id="modal-custom-code" class="modal-text-input" placeholder="例如: 8888" value="8888" />
+        </div>
+
+        <div style="text-align: left; margin-bottom: 24px;">
+          <label style="font-size: 1.15rem; font-weight: 900; color: #475569; display: block; margin-bottom: 6px;">
+            請輸入股票名稱 (例: 聊天室航母、發財神股)：
+          </label>
+          <input type="text" id="modal-custom-name" class="modal-text-input" placeholder="例如: 聊天室航母" value="發財神股" />
+        </div>
+
+        <div style="display: flex; justify-content: center; gap: 14px;">
+          <button class="btn-giant-cta" style="margin: 0; padding: 12px 36px; font-size: 1.35rem;" onclick="submitCustomStockModal()">
+            確認建立並載入 🚀
+          </button>
+          <button class="btn-top" style="font-size: 1.15rem; padding: 12px 24px;" onclick="closeCustomStockModal()">
+            取消
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- 彈窗 9：時間到期或資金歸零結算畫面 -->
+    <div class="overlay-modal-fullscreen" id="end-modal" style="display: none; z-index: 280;">
+      <div class="giant-modal-card" style="border: 6px solid #000;" id="end-modal-card">
+        <div class="giant-modal-title" id="end-title">結算報告</div>
+        <div style="font-size: 1.25rem; font-weight: 800; color: #1e293b; border-top: 3px dashed #000; padding-top: 18px; margin-bottom: 20px; line-height: 1.8;" id="end-content"></div>
+        <button class="btn-giant-cta" onclick="restartGame()">再戰台股 🔄</button>
+      </div>
+    </div>
+
+  </div>
+
+  <script>
+    let audioCtx = null;
+    let isAudioMuted = false;
+    let currentBgmInterval = null;
+    let currentBgmMode = 'menu';
+
+    function initAudio() {
+      if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+      if (audioCtx.state === 'suspended') audioCtx.resume();
+    }
+
+    function toggleAudio() {
+      isAudioMuted = !isAudioMuted;
+      document.getElementById("audio-toggle").innerText = isAudioMuted ? "🔇 音樂: 關" : "🔊 音樂: 開";
+      if (isAudioMuted) {
+        stopBGM();
+      } else {
+        switchBGM(currentBgmMode);
+      }
+    }
+
+    function playTone(freq, type="sine", dur=0.15, gain=0.1) {
+      if (isAudioMuted || !audioCtx) return;
+      try {
+        const osc = audioCtx.createOscillator();
+        const g = audioCtx.createGain();
+        osc.type = type;
+        osc.frequency.setValueAtTime(freq, audioCtx.currentTime);
+        g.gain.setValueAtTime(gain, audioCtx.currentTime);
+        g.gain.exponentialRampToValueAtTime(0.0001, audioCtx.currentTime + dur);
+        osc.connect(g);
+        g.connect(audioCtx.destination);
+        osc.start();
+        osc.stop(audioCtx.currentTime + dur);
+      } catch(e){}
+    }
+
+    function soundHappyWin() {
+      if (isAudioMuted || !audioCtx) return;
+      const notes = [523.25, 659.25, 783.99, 1046.50, 1318.51];
+      notes.forEach((freq, idx) => {
+        setTimeout(() => {
+          playTone(freq, "triangle", 0.18, 0.22);
+        }, idx * 60);
+      });
+      setTimeout(() => {
+        playTone(1567.98, "sine", 0.35, 0.25);
+      }, 340);
+    }
+
+    function soundSadLoss() {
+      if (isAudioMuted || !audioCtx) return;
+      try {
+        playTone(160, "sawtooth", 0.22, 0.3);
+        setTimeout(() => {
+          if (!audioCtx) return;
+          const osc = audioCtx.createOscillator();
+          const g = audioCtx.createGain();
+          osc.type = "sawtooth";
+          osc.frequency.setValueAtTime(440, audioCtx.currentTime);
+          osc.frequency.exponentialRampToValueAtTime(140, audioCtx.currentTime + 0.45);
+          g.gain.setValueAtTime(0.25, audioCtx.currentTime);
+          g.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + 0.45);
+          osc.connect(g);
+          g.connect(audioCtx.destination);
+          osc.start();
+          osc.stop(audioCtx.currentTime + 0.45);
+        }, 120);
+
+        setTimeout(() => {
+          playTone(95, "square", 0.35, 0.3);
+        }, 480);
+      } catch(e){}
+    }
+
+    let lastHeartbeatTime = 0;
+    function playHeartbeatSound(bpm) {
+      if (isAudioMuted || !audioCtx || bpm <= 0) return;
+      const now = performance.now();
+      const intervalMs = (60 / bpm) * 1000;
+
+      if (now - lastHeartbeatTime >= intervalMs) {
+        lastHeartbeatTime = now;
+        try {
+          const osc1 = audioCtx.createOscillator();
+          const gain1 = audioCtx.createGain();
+          osc1.type = "sine";
+          let baseFreq = bpm > 135 ? 90 : (bpm > 85 ? 75 : 60);
+          osc1.frequency.setValueAtTime(baseFreq, audioCtx.currentTime);
+          gain1.gain.setValueAtTime(0.22, audioCtx.currentTime);
+          gain1.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + 0.08);
+          osc1.connect(gain1);
+          gain1.connect(audioCtx.destination);
+          osc1.start();
+          osc1.stop(audioCtx.currentTime + 0.08);
+
+          setTimeout(() => {
+            if (!audioCtx) return;
+            const osc2 = audioCtx.createOscillator();
+            const gain2 = audioCtx.createGain();
+            osc2.type = "sine";
+            osc2.frequency.setValueAtTime(baseFreq * 0.8, audioCtx.currentTime);
+            gain2.gain.setValueAtTime(0.18, audioCtx.currentTime);
+            gain2.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + 0.1);
+            osc2.connect(gain2);
+            gain2.connect(audioCtx.destination);
+            osc2.start();
+            osc2.stop(audioCtx.currentTime + 0.1);
+          }, 65);
+        } catch(e){}
+      }
+    }
+
+    function stopBGM() {
+      if (currentBgmInterval) {
+        clearInterval(currentBgmInterval);
+        currentBgmInterval = null;
+      }
+    }
+
+    function switchBGM(mode) {
+      currentBgmMode = mode;
+      if (isAudioMuted || !audioCtx) return;
+      stopBGM();
+
+      if (mode === 'menu') {
+        const notes = [164.81, 196.00, 246.94, 329.63];
+        let step = 0;
+        currentBgmInterval = setInterval(() => {
+          playTone(notes[step % notes.length], "sine", 0.35, 0.025);
+          step++;
+        }, 360);
+      } else if (mode === 'intro') {
+        const notes = [220, 261.63, 293.66, 329.63, 440];
+        let step = 0;
+        currentBgmInterval = setInterval(() => {
+          playTone(notes[step % notes.length], "sawtooth", 0.15, 0.035);
+          step++;
+        }, 180);
+      } else if (mode === 'game') {
+        const notes = [130.81, 164.81, 196.00, 220.00, 196.00, 164.81];
+        let step = 0;
+        currentBgmInterval = setInterval(() => {
+          playTone(notes[step % notes.length], "triangle", 0.18, 0.03);
+          step++;
+        }, 240);
+      }
+    }
+
+    let playerName = "";
+
+    function replaceName(str) {
+      if (!str) return "";
+      const currentName = playerName || "實況主";
+      return str.replace(/\{NAME\}/g, currentName)
+                .replace(/主角/g, currentName)
+                .replace(/台主/g, currentName);
+    }
+
+    function speakLine(text) {
+      if (isAudioMuted || !('speechSynthesis' in window)) return;
+      window.speechSynthesis.cancel();
+      const processedText = replaceName(text);
+      const u = new SpeechSynthesisUtterance(processedText);
+      u.lang = 'zh-TW';
+      u.rate = 1.6;
+      u.pitch = 1.05;
+      window.speechSynthesis.speak(u);
+    }
+
+    function showBigAlert(title, message) {
+      soundSadLoss();
+      document.getElementById("custom-alert-title").innerText = replaceName(title);
+      document.getElementById("custom-alert-msg").innerText = replaceName(message);
+      document.getElementById("custom-alert-modal").style.display = "flex";
+      speakLine(message);
+    }
+    function closeCustomAlert() {
+      document.getElementById("custom-alert-modal").style.display = "none";
+      playTone(550, "sine", 0.05, 0.05);
+    }
+
+    const animeAvatars = {
+      neutral: `
+        <svg viewBox="0 0 100 100" width="125" height="125">
+          <circle cx="50" cy="50" r="46" fill="#fde047" stroke="#000" stroke-width="4"/>
+          <path d="M20 35 Q30 10 50 15 Q70 10 80 35 Q85 20 70 12 Q50 5 30 12 Z" fill="#1e293b" stroke="#000" stroke-width="3"/>
+          <rect x="14" y="32" width="72" height="12" fill="#ff2a4b" stroke="#000" stroke-width="2.5" rx="3"/>
+          <text x="50" y="41" font-size="7" font-weight="900" fill="#fff" text-anchor="middle">必勝</text>
+          <line x1="32" y1="54" x2="44" y2="54" stroke="#000" stroke-width="4.5" stroke-linecap="round"/>
+          <line x1="56" y1="54" x2="68" y2="54" stroke="#000" stroke-width="4.5" stroke-linecap="round"/>
+          <line x1="42" y1="72" x2="58" y2="72" stroke="#000" stroke-width="4" stroke-linecap="round"/>
+          <path d="M74 58 C74 54 78 50 78 50 C78 50 82 54 82 58 C82 60 80 62 78 62 C76 62 74 60 74 58 Z" fill="#00e5ff" stroke="#000" stroke-width="1.5"/>
+        </svg>
+      `,
+      profit: `
+        <svg viewBox="0 0 100 100" width="125" height="125">
+          <circle cx="50" cy="50" r="46" fill="#fef08a" stroke="#000" stroke-width="4"/>
+          <line x1="15" y1="15" x2="25" y2="25" stroke="#f59e0b" stroke-width="4"/>
+          <line x1="85" y1="15" x2="75" y2="25" stroke="#f59e0b" stroke-width="4"/>
+          <rect x="14" y="30" width="72" height="12" fill="#ff2a4b" stroke="#000" stroke-width="2.5" rx="3"/>
+          <text x="50" y="39" font-size="7" font-weight="900" fill="#fff" text-anchor="middle">必勝</text>
+          <polygon points="26,46 48,46 44,60 30,60" fill="#000"/>
+          <polygon points="52,46 74,46 70,60 56,60" fill="#000"/>
+          <line x1="48" y1="50" x2="52" y2="50" stroke="#000" stroke-width="3"/>
+          <line x1="30" y1="48" x2="38" y2="58" stroke="#fff" stroke-width="2.5"/>
+          <line x1="56" y1="48" x2="64" y2="58" stroke="#fff" stroke-width="2.5"/>
+          <path d="M40 70 Q50 84 68 68 Z" fill="#ff2a4b" stroke="#000" stroke-width="3"/>
+          <rect x="62" y="66" width="18" height="5" fill="#78350f" stroke="#000" stroke-width="1.5" transform="rotate(-15 62 66)"/>
+          <circle cx="79" cy="62" r="2.5" fill="#ff2a4b"/>
+        </svg>
+      `,
+      loss: `
+        <svg viewBox="0 0 100 100" width="125" height="125">
+          <circle cx="50" cy="50" r="46" fill="#cbd5e1" stroke="#000" stroke-width="4"/>
+          <line x1="28" y1="26" x2="28" y2="48" stroke="#3b82f6" stroke-width="3"/>
+          <line x1="36" y1="24" x2="36" y2="50" stroke="#3b82f6" stroke-width="3"/>
+          <line x1="44" y1="25" x2="44" y2="48" stroke="#3b82f6" stroke-width="3"/>
+          <line x1="52" y1="24" x2="52" y2="50" stroke="#3b82f6" stroke-width="3"/>
+          <line x1="60" y1="26" x2="60" y2="48" stroke="#3b82f6" stroke-width="3"/>
+          <rect x="14" y="32" width="72" height="12" fill="#991b1b" stroke="#000" stroke-width="2.5" rx="3"/>
+          <circle cx="36" cy="55" r="5" fill="#000"/>
+          <circle cx="64" cy="55" r="5" fill="#000"/>
+          <path d="M34 60 C32 75 30 85 36 90 C40 85 38 75 36 60 Z" fill="#00e5ff" opacity="0.8"/>
+          <path d="M62 60 C60 75 58 85 64 90 C68 85 66 75 64 60 Z" fill="#00e5ff" opacity="0.8"/>
+          <path d="M38 74 Q44 70 50 75 Q56 70 62 74 Q50 86 38 74 Z" fill="#1e1b4b" stroke="#000" stroke-width="3"/>
+        </svg>
+      `,
+      crazy: `
+        <svg viewBox="0 0 100 100" width="125" height="125">
+          <circle cx="50" cy="50" r="46" fill="#fca5a5" stroke="#000" stroke-width="4"/>
+          <rect x="14" y="32" width="72" height="12" fill="#b91c1c" stroke="#000" stroke-width="2.5"/>
+          <text x="50" y="41" font-size="7" font-weight="900" fill="#fff" text-anchor="middle">必勝</text>
+          <circle cx="36" cy="54" r="9.5" fill="#fff" stroke="#000" stroke-width="2.5"/>
+          <circle cx="64" cy="54" r="9.5" fill="#fff" stroke="#000" stroke-width="2.5"/>
+          <circle cx="36" cy="54" r="4" fill="#ff2a4b"/>
+          <circle cx="64" cy="54" r="4" fill="#ff2a4b"/>
+          <path d="M72 26 L78 26 M75 23 L75 29 M74 24 L77 28 M77 24 L74 28" stroke="#ff2a4b" stroke-width="3.5" stroke-linecap="round"/>
+          <rect x="36" y="70" width="28" height="10" fill="#fff" stroke="#000" stroke-width="3" rx="2"/>
+          <line x1="36" y1="75" x2="64" y2="75" stroke="#000" stroke-width="2"/>
+        </svg>
+      `
+    };
+
+    function updateAnimeFace(type) {
+      const container = document.getElementById("anime-portrait-box");
+      const statusText = document.getElementById("face-status");
+      const displayName = playerName || "少年股神";
+      
+      if (type === 'crazy') {
+        container.innerHTML = animeAvatars.crazy;
+        statusText.innerText = "狂暴化・瀕臨炸裂";
+        statusText.style.color = "var(--anime-red)";
+      } else if (type === 'profit') {
+        container.innerHTML = animeAvatars.profit;
+        statusText.innerText = `得意・${displayName}`;
+        statusText.style.color = "var(--anime-yellow)";
+      } else if (type === 'loss') {
+        container.innerHTML = animeAvatars.loss;
+        statusText.innerText = "破防・水鬼拉腳";
+        statusText.style.color = "var(--anime-green)";
+      } else {
+        container.innerHTML = animeAvatars.neutral;
+        statusText.innerText = "波瀾不驚・靜觀其變";
+        statusText.style.color = "#fff";
+      }
+    }
+
+    const mangaCutscenes = [
+      {
+        step: "ACT 1 / 4【起床覺醒】",
+        text: "陽光刺眼，{NAME} 在雜亂的房間猛然驚醒，憤怒捶床咆哮：『我受夠每天吃超商過期便當了！老子要成為世界首富！』",
+        voice: "{NAME}受夠每天吃過期便當了！老子今天一定要成為世界首富！",
+        svg: `
+          <svg viewBox="0 0 400 230" width="100%" height="100%">
+            <rect width="400" height="230" fill="#f8fafc"/>
+            <path d="M60 190 Q120 130 200 160 Q280 120 340 190 Z" fill="#94a3b8" stroke="#000" stroke-width="5"/>
+            <circle cx="200" cy="95" r="48" fill="#fde047" stroke="#000" stroke-width="5"/>
+            <ellipse cx="200" cy="115" rx="22" ry="18" fill="#ff2a4b" stroke="#000" stroke-width="4"/>
+            <path d="M180 85 L195 90 M220 85 L205 90" stroke="#000" stroke-width="6" stroke-linecap="round"/>
+            <circle cx="188" cy="94" r="5" fill="#000"/>
+            <circle cx="212" cy="94" r="5" fill="#000"/>
+            <text x="320" y="60" font-size="28" font-weight="900" fill="#ff2a4b" stroke="#000" stroke-width="1.5">DON!!</text>
+          </svg>
+        `
+      },
+      {
+        step: "ACT 2 / 4【必勝頭帶】",
+        text: "{NAME} 站在鏡子前目光如炬，雙手猛力將一條寫著【必勝】的熱血紅頭帶狠狠綁在額前！鬥志瞬間突破天際！",
+        voice: "必勝頭帶緊緊繫上！從這一刻起, {NAME}就是市場之神！",
+        svg: `
+          <svg viewBox="0 0 400 230" width="100%" height="100%">
+            <rect width="400" height="230" fill="#fef08a"/>
+            <polygon points="50,115 350,115 330,150 70,150" fill="#ff2a4b" stroke="#000" stroke-width="6"/>
+            <text x="200" y="142" font-size="30" font-weight="900" fill="#ffffff" stroke="#000" stroke-width="2.5" text-anchor="middle" letter-spacing="12">必勝</text>
+            <rect x="25" y="100" width="45" height="45" rx="8" fill="#fde047" stroke="#000" stroke-width="5"/>
+            <rect x="330" y="100" width="45" height="45" rx="8" fill="#fde047" stroke="#000" stroke-width="5"/>
+            <text x="50" y="55" font-size="30" font-weight="900" fill="#ffaa00" stroke="#000" stroke-width="2">GOGOGO!!</text>
+          </svg>
+        `
+      },
+      {
+        step: "ACT 3 / 4【神器出鞘】",
+        text: "{NAME} 緩緩從睡褲口袋掏出那支螢幕滿是裂痕的手機，深吸一口氣，拇指帶著神聖的儀式感——點開了股票看盤 App！",
+        voice: "{NAME}掏出神器！打開下單軟體！號角的戰歌已經奏響！",
+        svg: `
+          <svg viewBox="0 0 400 230" width="100%" height="100%">
+            <rect width="400" height="230" fill="#0f172a"/>
+            <rect x="140" y="20" width="120" height="190" rx="16" fill="#000" stroke="#00e5ff" stroke-width="6"/>
+            <rect x="150" y="35" width="100" height="160" fill="#020617"/>
+            <rect x="165" y="90" width="10" height="50" fill="#00e676"/>
+            <line x1="170" y1="75" x2="170" y2="155" stroke="#00e676" stroke-width="3"/>
+            <rect x="195" y="55" width="12" height="70" fill="#ff2a4b"/>
+            <line x1="201" y1="40" x2="201" y2="140" stroke="#ff2a4b" stroke-width="3"/>
+            <rect x="225" y="45" width="12" height="50" fill="#ff2a4b"/>
+            <line x1="231" y1="35" x2="231" y2="115" stroke="#ff2a4b" stroke-width="3"/>
+          </svg>
+        `
+      },
+      {
+        step: "ACT 4 / 4【進入異世界】",
+        text: "手機螢幕釋放出撕裂現實的耀眼強光！加權指數的洪流將 {NAME} 徹底吞沒——歡迎踏入台股殘酷修羅場！",
+        voice: "歡迎踏入台股修羅場！{NAME}, 下好離手, 生死自負！",
+        svg: `
+          <svg viewBox="0 0 400 230" width="100%" height="100%">
+            <rect width="400" height="230" fill="#ffffff"/>
+            <circle cx="200" cy="115" r="110" fill="#00e5ff" opacity="0.4"/>
+            <circle cx="200" cy="115" r="70" fill="#ffe600" opacity="0.6"/>
+            <circle cx="200" cy="115" r="30" fill="#ff2a4b"/>
+            <text x="200" y="125" font-size="26" font-weight="900" fill="#fff" text-anchor="middle">START!!</text>
+          </svg>
+        `
+      }
+    ];
+
+    let currentCutsceneIdx = 0;
+
+    function startMangaIntroCutscene() {
+      initAudio();
+      const inputElem = document.getElementById("streamer-name-input");
+      const rawVal = inputElem.value.trim();
+
+      if (!rawVal) {
+        showBigAlert("🚨 匿名開台違規！", "實名制開台！請務必親自填寫你的實況 ID 或本名，營業員拒絕為無名氏開戶！");
+        inputElem.focus();
+        return;
+      }
+
+      playerName = rawVal;
+      document.getElementById("player-display-tag").innerText = `實況主: ${playerName}`;
+      document.getElementById("start-modal").style.display = "none";
+
+      switchBGM('intro');
+
+      currentCutsceneIdx = 0;
+      document.getElementById("intro-story-modal").style.display = "flex";
+      renderMangaScene();
+    }
+
+    function renderMangaScene() {
+      const sc = mangaCutscenes[currentCutsceneIdx];
+      document.getElementById("manga-step-label").innerText = sc.step;
+      document.getElementById("manga-story-text").innerText = replaceName(sc.text);
+      document.getElementById("manga-art-panel").innerHTML = sc.svg;
+      speakLine(sc.voice);
+      playTone(520, "sawtooth", 0.08, 0.1);
+    }
+
+    function nextMangaScene() {
+      currentDocIndex = currentCutsceneIdx++;
+      if (currentCutsceneIdx < mangaCutscenes.length) {
+        renderMangaScene();
+      } else {
+        finishIntroCutscene();
+      }
+    }
+
+    function finishIntroCutscene() {
+      const flash = document.getElementById("white-flash-layer");
+      flash.style.opacity = "1";
+      soundSadLoss();
+
+      setTimeout(() => {
+        document.getElementById("intro-story-modal").style.display = "none";
+        flash.style.opacity = "0";
+
+        switchBGM('game');
+
+        speakLine(`開盤！${playerName}, 大震盪巨浪來襲！謹防追繳電話！`);
+        resizeCanvas();
+        initChart();
+        updateDashboard(replaceName(`全新開局！${playerName} 手握百萬本金下好離手！`));
+      }, 350);
+    }
+
+    let day = 1;
+    const maxDays = 30;
+    let cash = 1000000;
+    let stress = 20;
+
+    let currentSelectedBetAmount = 300000;
+
+    const stockDB = {
+      '0050':   { name: "0050 元大台灣50", basePrice: 105, vol: 1.8, desc: "大盤權值核心，溫水煮青蛙！" },
+      '00981A': { name: "00981A 主動式妖ETF", basePrice: 15, vol: 4.8, desc: "基金經理人提款機！專門反向割散戶！" },
+      '2330':   { name: "2330 台積電", basePrice: 980, vol: 2.5, desc: "統神神之信仰！護國神山，動輒急殺破線！" },
+      '2609':   { name: "2609 陽明", basePrice: 62, vol: 4.2, desc: "超負荷 180T 水鬼船！無情套牢，咕嚕咕嚕！" },
+      '4743':   { name: "4743 合一", basePrice: 145, vol: 6.5, desc: "超負荷生技無量跌停！當年當沖抱頭痛哭違約交割！" },
+      '2327':   { name: "2327 國巨", basePrice: 620, vol: 3.8, desc: "羅傑被動元件慘痛套牢史！抱著看它一路跌，死魚眼嘆氣！" },
+      '3081':   { name: "3081 聯亞", basePrice: 340, vol: 5.8, desc: "紫姝的最愛／本命光通訊妖股！動不動被關禁閉20分鐘一撮！" },
+      '2454':   { name: "2454 聯發科", basePrice: 1250, vol: 3.2, desc: "小啵緹的唯一真愛發哥！上沖下洗專洗散戶！" },
+      '2753':   { name: "2753 八方雲集", basePrice: 165, vol: 2.2, desc: "辛恩的最愛鍋貼股！水餃鍋貼吃成大股東！" },
+
+      '1213':   { name: "1213 大飲", basePrice: 11, vol: 5.0, desc: "蘋果西打保衛戰！滿手西打無處安放！" },
+      '2002':   { name: "2002 中鋼", basePrice: 23, vol: 1.2, desc: "雨傘指甲剪紀念品概念股！買進直接凍結！" },
+      '2059':   { name: "2059 川湖", basePrice: 1180, vol: 4.8, desc: "百萬純金伺服器滑軌！跳一個tick就是一個月薪水！" },
+      '2359':   { name: "2359 所羅門", basePrice: 165, vol: 6.8, desc: "老黃神選之子！看到機器人散戶就無腦閉眼追！" },
+      '2409':   { name: "2409 友達", basePrice: 17, vol: 3.6, desc: "面板雙貓抓交替！每天幾毛錢洗刷刷！" },
+      '2412':   { name: "2412 中華電", basePrice: 124, vol: 0.8, desc: "老人家退休養生避難牌！跌得慢但依然要割！" },
+      '2498':   { name: "2498 宏達電", basePrice: 48, vol: 5.2, desc: "雪紅阿姨元宇宙！散戶重返千元榮耀的萬年大餅！" },
+      '3163':   { name: "3163 波若威", basePrice: 95, vol: 5.5, desc: "宇智波一族寫輪眼概念股！萬花筒幻術追高！" },
+      '3231':   { name: "3231 緯創", basePrice: 110, vol: 3.8, desc: "AI伺服器代工，當沖散戶的最愛！" },
+      '6770':   { name: "6770 力積電", basePrice: 22, vol: 4.2, desc: "黃董帶你飛！晶圓變鋁業溜滑梯！" },
+      '00940':  { name: "00940 價值高息", basePrice: 9.8, vol: 2.0, desc: "萬人自救會豆腐軍團！上市破發和尚天天念經！" },
+      'YAO':    { name: "YAO 主力妖股", basePrice: 88, vol: 7.5, desc: "內線與主力雲集，一念成神一念住公園！" }
+    };
+
+    let selectedStock = '0050';
+    let currentStockPrice = 105;
+    
+    let positionDirection = 'none';
+    let positionCost = 0;
+    let positionVal = 0;
+    let candles = [];
+
+    function switchStockDirect(code) {
+      if (positionVal > 0) {
+        const netCash = Math.round(positionVal * 0.995);
+        cash += netCash;
+        positionVal = 0;
+        positionCost = 0;
+        positionDirection = 'none';
+        showBigAlert("🔄 換股自動結清", `換股前已自動替你將原持倉市價變現，拿回現金 $${netCash.toLocaleString()}！`);
+      }
+
+      selectedStock = code;
+      currentStockPrice = stockDB[code].basePrice;
+
+      document.querySelectorAll(".stock-chip").forEach(b => b.classList.remove("active"));
+      const targetChip = document.getElementById(`chip-${code}`);
+      if (targetChip) targetChip.classList.add("active");
+
+      document.getElementById("stock-dropdown").value = "";
+      document.getElementById("chart-stock-label").innerText = `標的: ${stockDB[code].name}`;
+      playTone(600, "triangle", 0.06, 0.08);
+
+      initChart();
+      updateDashboard(replaceName(`已切換看盤標的為【${stockDB[code].name}】。${stockDB[code].desc}`));
+    }
+
+    function handleDropdownChange(code) {
+      if (!code) return;
+
+      if (code === "CUSTOM") {
+        document.getElementById("custom-stock-input-modal").style.display = "flex";
+        document.getElementById("modal-custom-code").focus();
+        return;
+      }
+
+      switchStockDirect(code);
+    }
+
+    function closeCustomStockModal() {
+      document.getElementById("custom-stock-input-modal").style.display = "none";
+      document.getElementById("stock-dropdown").value = "";
+    }
+
+    function submitCustomStockModal() {
+      const codeInput = document.getElementById("modal-custom-code");
+      const nameInput = document.getElementById("modal-custom-name");
+      const customCode = codeInput.value.trim() || "8888";
+      const customName = nameInput.value.trim() || "發財神股";
+
+      const fullCustomKey = `CUSTOM_${Date.now()}`;
+      const fullName = `${customCode} ${customName}`;
+
+      stockDB[fullCustomKey] = {
+        name: fullName,
+        basePrice: Math.floor(Math.random() * 200) + 50,
+        vol: 7.0,
+        desc: "聊天室觀眾自訂神股！多空對壘，大單隨時炸裂！"
+      };
+
+      const opt = document.createElement("option");
+      opt.value = fullCustomKey;
+      opt.innerText = `🎁 ${fullName}`;
+      const select = document.getElementById("stock-dropdown");
+      select.insertBefore(opt, select.lastElementChild);
+      select.value = fullCustomKey;
+
+      closeCustomStockModal();
+      switchStockDirect(fullCustomKey);
+      speakLine(`載入觀眾自訂神股：${customName}！大盤震盪開始！`);
+    }
+
+    function useHighInterestLoan() {
+      if (cash > 200000) {
+        showBigAlert("🏦 地下錢莊拒絕貸款！", "{NAME}，你還有現金，地下錢莊老大冷笑：『等你快破產走投無路時再來找老子！』");
+        return;
+      }
+      cash += 500000;
+      stress = Math.min(100, stress + 40);
+      soundSadLoss();
+      showBigAlert("💸 借款 $500,000 入帳！", "{NAME} 透過地下錢莊借了 50 萬（年利率 87%）！心電圖瞬間恐慌狂飆！記得要在 3 天內翻倍，否則黑道大哥要來砍手腳了！");
+      updateDashboard(replaceName(`${playerName} 向地下錢莊借款 50 萬！利息壓得喘不過氣！`));
+    }
+
+    let ecgPoints = [];
+    let ecgPhase = 0;
+
+    function resizeEcg() {
+      const cvs = document.getElementById("ecg-canvas");
+      const parent = cvs.parentElement;
+      if (parent) {
+        cvs.width = parent.clientWidth;
+        cvs.height = parent.clientHeight;
+      }
+    }
+
+    function renderECG() {
+      const cvs = document.getElementById("ecg-canvas");
+      if (!cvs || cvs.width === 0) return;
+      const ctx = cvs.getContext("2d");
+      
+      const unpnl = positionVal - positionCost;
+      const total = cash + positionVal;
+      
+      let bpm = 72;
+      let chaos = 0;
+      let isFlatline = false;
+      let ecgColor = "#00e676";
+      let stateName = "平穩";
+
+      if (total <= 0 || (cash <= 0 && positionVal <= 0)) {
+        isFlatline = true;
+        bpm = 0;
+        ecgColor = "#ff2a4b";
+        stateName = "歸零停止";
+      } else if (unpnl > 40000) {
+        bpm = Math.max(55, Math.round(70 - (unpnl / 40000)));
+        chaos = 0.4;
+        ecgColor = "#00e676";
+        stateName = "平穩";
+      } else if (unpnl < -100000 || total < 300000) {
+        bpm = Math.min(220, Math.round(140 + (Math.abs(unpnl) / 8000)));
+        chaos = Math.min(18, (Math.abs(unpnl) / 20000) * 4);
+        ecgColor = "#ff2a4b";
+        stateName = "恐慌";
+      } else if (unpnl < -20000 || total < 700000) {
+        bpm = Math.min(135, Math.round(90 + (Math.abs(unpnl) / 6000)));
+        chaos = Math.min(7, (Math.abs(unpnl) / 25000) * 3);
+        ecgColor = "#d97706";
+        stateName = "緊張";
+      } else {
+        bpm = 72 + Math.round(stress * 0.35);
+        chaos = stress * 0.12;
+        ecgColor = "#00e676";
+        stateName = "平穩";
+      }
+
+      document.getElementById("ecg-state-tag").innerText = `ECG [${stateName}]`;
+      document.getElementById("ecg-state-tag").style.color = ecgColor;
+      document.getElementById("ecg-bpm").innerText = isFlatline ? "0 BPM" : `${bpm} BPM`;
+      document.getElementById("ecg-bpm").style.color = ecgColor;
+      document.getElementById("ecg-card-box").style.borderColor = ecgColor;
+
+      playHeartbeatSound(bpm);
+
+      ctx.fillStyle = "rgba(2, 7, 18, 0.28)";
+      ctx.fillRect(0, 0, cvs.width, cvs.height);
+
+      const midY = cvs.height / 2;
+      let y = midY;
+
+      if (isFlatline) {
+        y = midY + (Math.random() - 0.5) * 1.2;
+      } else {
+        ecgPhase = (ecgPhase + (bpm / 35)) % 60;
+        if (ecgPhase > 25 && ecgPhase < 32) {
+          const p = ecgPhase - 25;
+          if (p < 2) y = midY + 4;
+          else if (p < 4) y = midY - (16 + chaos);
+          else if (p < 6) y = midY + (12 + chaos);
+          else y = midY - 3;
+        } else {
+          y = midY + (Math.random() - 0.5) * chaos;
+        }
+      }
+
+      ecgPoints.push(y);
+      if (ecgPoints.length > cvs.width) ecgPoints.shift();
+
+      ctx.beginPath();
+      ctx.strokeStyle = ecgColor;
+      ctx.lineWidth = 2.2;
+      ctx.shadowBlur = 6;
+      ctx.shadowColor = ecgColor;
+
+      for (let i = 0; i < ecgPoints.length; i++) {
+        if (i === 0) ctx.moveTo(i, ecgPoints[i]);
+        else ctx.lineTo(i, ecgPoints[i]);
+      }
+      ctx.stroke();
+      ctx.shadowBlur = 0;
+    }
+
+    setInterval(renderECG, 45);
+
+    const majorEventsPool = [
+      {
+        title: "黃仁勳來台逛夜市吃大腸包小腸！",
+        img: "🌭🚀",
+        desc: "皮衣教主現身士林夜市，手拿大腸包小腸高喊：『台灣供應鏈天下無敵！』AI科技概念股全線集體漲停噴出！",
+        impact: "川湖、發哥、神山全線噴出！",
+        trend: 0.12,
+        isBull: true,
+        voice: "皮衣教主逛夜市啦！供應鏈全部雞犬升天！"
+      },
+      {
+        title: "外星人突襲簽署晶片外包大單！",
+        img: "🛸⚡",
+        desc: "神秘飛碟降落竹科，外星文明宣布向台灣簽署十光年的先進製程水冷晶片合約！全球科技巨頭全體跪求產能！",
+        impact: "矽光子聯亞與神山直衝天花板漲停！",
+        trend: 0.135,
+        isBull: true,
+        voice: "外星人都要搶著下單！這波直接噴向銀河系！"
+      },
+      {
+        title: "國家隊攜兩千億誓死護盤！",
+        img: "🏛️🛡️",
+        desc: "行政院召開緊急國安會議，宣布護盤基金無上限進場！官員在電視上宣示：『誰敢放空，就讓誰賠到脫褲！』",
+        impact: "權值股與0050全線暴拉大長紅！",
+        trend: 0.11,
+        isBull: true,
+        voice: "國家隊帶兩千億來救你啦！空軍弟兄準備集體跳樓！"
+      },
+      {
+        title: "台積電宣布在月球背面建造二奈米廠！",
+        img: "🌕🔬",
+        desc: "董事長在法說會宣布太空晶圓廠計畫，利用宇宙絕對零度超導，效能暴增一萬倍！全球晶片股原地膜拜！",
+        impact: "台積電與加權指數跳空大爆發！",
+        trend: 0.125,
+        isBull: true,
+        voice: "二奈米廠開到月球去啦！全宇宙都是神山的產能！"
+      },
+      {
+        title: "神秘中東主權基金掃貨萬張！",
+        img: "👳‍♂️💰",
+        desc: "中東石油王看好台灣科技與散熱實力，無上限砸盤掃貨，多頭大軍直接拉出連續無量漲停！",
+        impact: "全市場多頭全面狂飆！",
+        trend: 0.115,
+        isBull: true,
+        voice: "石油王包下全台股票！多單直接財富自由！"
+      },
+      {
+        title: "巴菲特突然出清台股！",
+        img: "👴💸",
+        desc: "股神巴菲特凌晨無預警發出公開信：『吃膩鳳梨酥，決定清空所有台股部位！』外資全面恐慌倒貨！",
+        impact: "大盤與個股全線大重挫跌停！",
+        trend: -0.12,
+        isBull: false,
+        voice: "大震盪！巴菲特閃電清倉台股，全市場外資大逃殺！"
+      },
+      {
+        title: "主力妖股董座捲款潛逃海外！",
+        img: "🏃‍♂️💼",
+        desc: "某概念股董事長被爆昨晚帶著三箱黃金搭私人飛機飛往無引渡條約國，檢調火速封鎖總部，公司剩下一隻看門狗！",
+        impact: "妖股直接無量跳空重挫鎖死跌停！",
+        trend: -0.135,
+        isBull: false,
+        voice: "董座捲款落跑啦！公司只剩看門狗，韭菜散戶全被關在裡面！"
+      },
+      {
+        title: "投顧名師被爆在小吃店擲筊報明牌！",
+        img: "🥟🎲",
+        desc: "每天在電視上分析波浪理論的百萬訂閱名師，被拍到私底下是用香腸攤的骰子決定多空的！股民信心全面崩潰！",
+        impact: "高槓桿當沖概念股多空雙向大地震！",
+        trend: -0.105,
+        isBull: false,
+        voice: "名師居然是用擲筊報明牌的！會員氣到當場砸電視！"
+      },
+      {
+        title: "央行總裁在健身房拉傷宣布升息兩碼！",
+        img: "🏋️‍♂️📉",
+        desc: "央行總裁深蹲拉傷心情奇差無比，早盤無預警突襲宣布升息兩碼打擊投機，借錢當沖的散戶集體痛哭流涕！",
+        impact: "高槓桿融資股全體急劇回檔腰斬！",
+        trend: -0.115,
+        isBull: false,
+        voice: "總裁深蹲拉傷就宣布升息！散戶槓桿當場被無情斷頭！"
+      },
+      {
+        title: "全台光纖海纜被鯊魚啃斷八成！",
+        img: "🦈💥",
+        desc: "海底狂鯊突襲啃斷台美光纖電纜，全台證券號子看盤軟體全部斷線，大戶恐慌集體無腦狂倒貨！",
+        impact: "全市場多單大崩盤！",
+        trend: -0.125,
+        isBull: false,
+        voice: "海纜被鯊魚咬斷啦！看盤軟體全盲，外資不計代價狂倒！"
+      }
+    ];
+
+    let usedMajorEvents = [];
+    let nextMajorEventDays = 2;
+    let pendingMajorTrend = 0;
+
+    const absurdReasons = {
+      up: [
+        { icon: "☕", badge: "老董心情爽", text: "老董早餐多喝大冰奶，開盤大手一揮直接買回一萬張庫藏股！", shortVoice: "太神啦！老子是少年股神！三大法人通通給我跪下叫爸爸！" },
+        { icon: "🍕", badge: "手滑按錯", text: "外資操盤手叫外送把統編打成代號，百萬大單市價灌進去！", shortVoice: "起飛！外資外送按錯代號，感謝外資爸爸送我和牛！" },
+        { icon: "🥟", badge: "高僧加持", text: "廟公擲筊連出十個聖筊，信徒大媽團解除定存集體瘋搶！", shortVoice: "玄學發威！大媽團解定存瘋狂跟單，老子賺爛啦！" },
+        { icon: "🕶️", badge: "教主同款", text: "皮衣教主被拍到保護貼牌子是這家代工，全球狂粉連夜拉漲停！", shortVoice: "教主神威！老黃摸過的都會飛，聊天室立正站好！" },
+        { icon: "🧹", badge: "利空出盡", text: "昨天爆發違約利空，主力冷笑反手超級軋空，拉出大長紅！", shortVoice: "利空出盡！神秘大戶暴力軋空，爽到歪頭！" },
+        { icon: "🐱", badge: "招財玄學", text: "門口警衛撿到三花貓，空軍總司令嚇到自己市價停損回補！", shortVoice: "空軍投降！司令嚇到市價回補，這波直接封神！" }
+      ],
+      down: [
+        { icon: "🍱", badge: "排骨掉地", text: "主力吃便當排骨掉在地上，暴怒之下市價狂砸五萬張宣洩！", shortVoice: "幹！主力便當排骨掉地上，憑什麼市價倒給我？我不服啊！" },
+        { icon: "💍", badge: "前妻賣股", text: "老董前妻剛好在歷史最高點出清持股，多單慘遭無情活埋！", shortVoice: "老董前妻在最高點倒光股票，這女人太狠了！我直接被活埋！" },
+        { icon: "🚀", badge: "利多出貨", text: "明明利多發滿天，結果法人全在偷偷倒貨，教科書級割韭菜！", shortVoice: "笑死！利多是發給散戶看的，主力直接把我當豬宰！" },
+        { icon: "🔌", badge: "保全絆線", text: "保全拖地踢掉機房電源，報價短暫失靈造成多殺多踩踏！", shortVoice: "保全踢掉電源是什麼鬼啊？！這也能跌停？我要去睡公園了！" },
+        { icon: "🎲", badge: "笑杯清倉", text: "投顧名師為這檔股票擲筊問神出笑杯，會員嚇到集體按跌停！", shortVoice: "名師擲筊出笑杯就跌停？！這什麼垃圾股票啊！" },
+        { icon: "🥶", badge: "水鬼拉腳", text: "買在歷史最高峰的大學長怨氣太重，無情拉動水鬼拉腳大陣！", shortVoice: "水鬼拉腳！180T的大學長在水裡抓我腳踝，救命啊！" }
+      ]
+    };
+
+    const stockSpecialChat = {
+      '2330': ["統神神山開示：不可能會倒！", "神之加碼怎麼輸？", "一張不賣奇蹟自來！", "大盤看神山臉色！"],
+      '2609': ["超負荷180T水手集合！", "咕嚕咕嚕（溺水聲）", "媽！我陽明被套在180啦！", "張家盛又在頂樓吹風！"],
+      '4743': ["生技無情關廁所！", "老媽快匯錢救命違約交割啦！", "盛式當沖又送頭！", "心電圖直接躺平！"],
+      '2327': ["杰哥國巨解套沒？", "被動套牢主動認賠！", "羅傑死魚眼嘆氣：這盤怎麼走成這樣", "泰銘哥又在微笑了！"],
+      '3081': ["紫姝的最愛／矽光子仙丹！", "又進處置二十分鐘撮一盤！", "這檔股票有紫姝的靈魂！", "主力直接拔插頭！"],
+      '2454': ["小啵緹唯一真愛發哥！", "發哥帶啵緹飛向宇宙！", "IC設計霸主！", "今天發哥有給面子嗎？"],
+      '2753': ["辛恩今晚吃幾顆鍋貼？", "八方大股東前來報到！", "吃鍋貼救股價！", "皮焦一點謝謝老闆！"],
+      '2059': ["這滑軌是純金做的嗎？", "跳一個tick一台iPhone不見", "{NAME} 手都在抖了！", "一張川湖直接住公園！"],
+      '00940': ["救救九四零自救會", "巴菲特都沒你懂豆腐", "今天又破發了啦！", "和尚開始念經囉～"],
+      '2002': ["買一張領一輩子指甲剪", "春燕到底飛去哪了？", "一股中鋼換一把傘", "鋼鐵人變生鏽人！"],
+      '6770': ["黃董又在笑了", "千元力積電在哪裡？", "晶圓變鋁業溜滑梯", "套在喜馬拉雅山腳下！"],
+      '1213': ["為了蘋果西打我也要買！", "滿手西打無處安放", "喝一口降降血壓！"]
+    };
+
+    const generalChatMemes = {
+      up: ["7777777", "{NAME} 少年股神降臨！", "請受小弟一拜！", "這操作太神啦！", "{NAME} 狂噴大紅棒！"],
+      down: ["笑死抓交替", "{NAME} 阿呆谷接刀王", "公園第一排紙箱先幫 {NAME} 占好了", "水鬼拉腳囉～", "抬出去了！", "恭喜實況主破防！"]
+    };
+
+    const chatUsers = ["統神鐵粉", "永和山道猴", "韭菜大師", "大安區營業員", "淡水紙箱王", "0050萬歲", "當沖猴子", "空軍司令"];
+
+    function addChat(type) {
+      const user = chatUsers[Math.floor(Math.random() * chatUsers.length)];
+      let text = "";
+
+      const specialList = stockSpecialChat[selectedStock];
+      if (specialList && Math.random() < 0.6) {
+        text = specialList[Math.floor(Math.random() * specialList.length)];
+      } else {
+        const list = generalChatMemes[type] || generalChatMemes.down;
+        text = list[Math.floor(Math.random() * list.length)];
+      }
+
+      const box = document.getElementById("chat-box");
+      const item = document.createElement("div");
+      item.className = "chat-line";
+      item.innerHTML = `<span class="chat-author">${user}:</span> ${replaceName(text)}`;
+      box.appendChild(item);
+      box.scrollTop = box.scrollHeight;
+    }
+
+    /* ================= 支援 -10萬 與 加減項的金額調節 (v8.9 修正版) ================= */
+    function updateBetAmountDisplay() {
+      const maxPossibleBet = Math.max(10000, Math.floor(cash / 1.005));
+      if (currentSelectedBetAmount > maxPossibleBet) {
+        currentSelectedBetAmount = maxPossibleBet;
+      }
+      if (currentSelectedBetAmount < 10000) {
+        currentSelectedBetAmount = 10000;
+      }
+      document.getElementById("display-order-amount").innerText = `$${currentSelectedBetAmount.toLocaleString()}`;
+    }
+
+    function addBuyAmount(delta) {
+      if (cash < 10000) return;
+      const maxPossibleBet = Math.floor(cash / 1.005);
+      currentSelectedBetAmount = Math.min(maxPossibleBet, Math.max(10000, currentSelectedBetAmount + delta));
+      updateBetAmountDisplay();
+      playTone(550, "sine", 0.04, 0.05);
+    }
+
+    function setBuyRatio(ratio) {
+      if (cash < 10000) return;
+      const maxPossibleBet = Math.floor(cash / 1.005);
+      currentSelectedBetAmount = Math.max(10000, Math.floor(maxPossibleBet * ratio));
+      updateBetAmountDisplay();
+      playTone(600, "triangle", 0.05, 0.05);
+    }
+
+    function showTutorial() {
+      document.getElementById("tutorial-modal").style.display = "flex";
+      playTone(600, "square", 0.05, 0.05);
+    }
+    function closeTutorial() {
+      document.getElementById("tutorial-modal").style.display = "none";
+      playTone(500, "sine", 0.05, 0.05);
+    }
+
+    function resizeCanvas() {
+      const cvs = document.getElementById("kline");
+      const wrap = document.getElementById("canvas-wrap");
+      if (wrap) {
+        cvs.width = wrap.clientWidth;
+        cvs.height = wrap.clientHeight;
+      }
+      resizeEcg();
+    }
+
+    function initChart() {
+      candles = [];
+      let base = currentStockPrice;
+      for (let i = 0; i < 16; i++) {
+        let diff = (Math.random() - 0.5) * (base * 0.04);
+        let o = base;
+        let c = base + diff;
+        candles.push({ o, h: Math.max(o,c)+base*0.02, l: Math.min(o,c)-base*0.02, c });
+        base = c;
+      }
+      currentStockPrice = Math.round(base * 10) / 10;
+      renderChart();
+    }
+
+    function renderChart() {
+      const cvs = document.getElementById("kline");
+      if (!cvs || cvs.width === 0) return;
+      const ctx = cvs.getContext("2d");
+      ctx.clearRect(0, 0, cvs.width, cvs.height);
+
+      const all = candles.flatMap(c => [c.h, c.l]);
+      const minP = Math.min(...all) * 0.985;
+      const maxP = Math.max(...all) * 1.015;
+      const range = maxP - minP;
+
+      const spacing = cvs.width / (candles.length + 1);
+      const w = Math.max(8, spacing * 0.65);
+
+      ctx.strokeStyle = "#17233d";
+      ctx.lineWidth = 1;
+      for (let y = 30; y < cvs.height; y += 45) {
+        ctx.beginPath();
+        ctx.moveTo(0, y); ctx.lineTo(cvs.width, y); ctx.stroke();
+      }
+
+      candles.forEach((c, i) => {
+        const x = (i + 1) * spacing;
+        const isUp = c.c >= c.o;
+        const col = isUp ? "#ff2a4b" : "#00e676";
+
+        const yO = cvs.height - ((c.o - minP) / range) * cvs.height;
+        const yC = cvs.height - ((c.c - minP) / range) * cvs.height;
+        const yH = cvs.height - ((c.h - minP) / range) * cvs.height;
+        const yL = cvs.height - ((c.l - minP) / range) * cvs.height;
+
+        ctx.strokeStyle = col;
+        ctx.lineWidth = 3;
+        ctx.beginPath();
+        ctx.moveTo(x, yH); ctx.lineTo(x, yL); ctx.stroke();
+
+        ctx.fillStyle = col;
+        ctx.fillRect(x - w/2, Math.min(yO, yC), w, Math.max(4, Math.abs(yC - yO)));
+      });
+    }
+
+    function checkAndTriggerMajorEvent() {
+      nextMajorEventDays--;
+      if (nextMajorEventDays <= 0 && day < 28) {
+        nextMajorEventDays = Math.floor(Math.random() * 2) + 1;
+
+        let available = majorEventsPool.filter(e => !usedMajorEvents.includes(e.title));
+        if (available.length === 0) {
+          usedMajorEvents = [];
+          available = majorEventsPool;
+        }
+
+        const ev = available[Math.floor(Math.random() * available.length)];
+        usedMajorEvents.push(ev.title);
+
+        let isTrap = Math.random() < 0.40;
+        let finalTrend = ev.trend;
+
+        if (ev.isBull && isTrap) {
+          finalTrend = -Math.abs(ev.trend) * 1.1;
+        } else if (!ev.isBull && isTrap) {
+          finalTrend = Math.abs(ev.trend) * 1.1;
+        }
+
+        pendingMajorTrend = finalTrend;
+
+        const card = document.getElementById("major-modal-card");
+        const headline = document.getElementById("major-event-headline");
+        const descBox = document.getElementById("major-event-desc");
+        const btn = document.getElementById("major-event-btn");
+
+        if (ev.isBull) {
+          card.style.borderColor = "#ff2a4b";
+          card.style.background = "#fff5f5";
+          headline.innerText = "🚀 全球狂賀・重大利多訊息發布 🚀";
+          headline.style.color = "#ff2a4b";
+          descBox.style.background = "#fee2e2";
+          descBox.style.borderColor = "#ff2a4b";
+          btn.style.background = "linear-gradient(135deg, #ff2a4b, #b91c1c)";
+          soundHappyWin();
+          speakLine(ev.voice);
+        } else {
+          card.style.borderColor = "#00e676";
+          card.style.background = "#f0fdf4";
+          headline.innerText = "🚨 全球金融利空核彈突襲 🚨";
+          headline.style.color = "#00a854";
+          descBox.style.background = "#dcfce7";
+          descBox.style.borderColor = "#00e676";
+          btn.style.background = "linear-gradient(135deg, #00e676, #009944)";
+          soundSadLoss();
+          speakLine(ev.voice);
+        }
+
+        document.getElementById("major-event-img").innerText = ev.img;
+        document.getElementById("major-event-title").innerText = replaceName(ev.title);
+        document.getElementById("major-event-desc").innerText = replaceName(ev.desc);
+        document.getElementById("major-event-impact").innerText = `⚠️ 盤面衝擊預警：${replaceName(ev.impact)}`;
+
+        document.getElementById("major-event-modal").style.display = "flex";
+        triggerMangaShake();
+        return true;
+      }
+      return false;
+    }
+
+    function acknowledgeMajorEvent() {
+      document.getElementById("major-event-modal").style.display = "none";
+      playTone(600, "triangle", 0.08, 0.1);
+    }
+
+    function triggerDailyEventModal(category, dayPnl, dayPnlPct, isExit, stockPriceChange) {
+      document.getElementById("custom-alert-modal").style.display = "none";
+
+      const pnlBanner = document.getElementById("daily-pnl-banner");
+      const pnlLabel = document.getElementById("daily-pnl-label");
+      const pnlVal = document.getElementById("daily-pnl-value");
+      const eventCard = document.getElementById("daily-event-card");
+      const reasonBox = document.getElementById("clean-reason-box");
+      const nextBtn = document.getElementById("daily-event-btn");
+
+      pnlLabel.innerText = isExit ? "本次平倉實現損益" : "昨日至今日浮動損益變化";
+
+      const sign = dayPnl >= 0 ? "+" : "";
+      pnlVal.innerText = `${sign}$${Math.round(dayPnl).toLocaleString()} (${sign}${dayPnlPct.toFixed(1)}%)`;
+
+      const isStockUp = stockPriceChange >= 0;
+      const reasonPool = isStockUp ? absurdReasons.up : absurdReasons.down;
+      const reason = reasonPool[Math.floor(Math.random() * reasonPool.length)];
+
+      const badge = document.getElementById("clean-reason-badge");
+      document.getElementById("clean-reason-icon").innerText = reason.icon;
+      document.getElementById("clean-reason-text").innerText = replaceName(reason.text);
+
+      if (dayPnl >= 0) {
+        pnlVal.style.color = "var(--anime-red)";
+        pnlBanner.style.borderColor = "var(--anime-red)";
+        pnlBanner.style.background = "#fff5f5";
+        eventCard.style.borderColor = "var(--anime-red)";
+        eventCard.style.background = "#fffafa";
+        reasonBox.style.borderColor = "var(--anime-red)";
+        reasonBox.style.background = "#fff1f2";
+        badge.innerText = `▲ 漲升真相 · ${reason.badge}`;
+        badge.style.background = "var(--anime-red)";
+        nextBtn.style.background = "linear-gradient(135deg, var(--anime-yellow), #f59e0b)";
+        soundHappyWin();
+      } else {
+        pnlVal.style.color = "#00a854";
+        pnlBanner.style.borderColor = "var(--anime-green)";
+        pnlBanner.style.background = "#f0fdf4";
+        eventCard.style.borderColor = "var(--anime-green)";
+        eventCard.style.background = "#f6fef9";
+        reasonBox.style.borderColor = "var(--anime-green)";
+        reasonBox.style.background = "#eefbf3";
+        badge.innerText = `▼ 暴跌真相 · ${reason.badge}`;
+        badge.style.background = "#00a854";
+        nextBtn.style.background = "linear-gradient(135deg, #00e676, #009944)";
+        soundSadLoss();
+      }
+
+      document.getElementById("daily-event-modal").style.display = "flex";
+
+      let voiceSummary = "";
+      if (category === 'chatProfit') {
+        voiceSummary = `聊天室太神啦！全體起立！酸民瞬間變股神，愛死你們了乾爹！`;
+      } else if (category === 'chatLoss') {
+        voiceSummary = `笑死！聊天室全是主力派來的臥底黑粉！退訂！全部給我退訂！`;
+      } else {
+        voiceSummary = reason.shortVoice;
+      }
+      speakLine(voiceSummary);
+    }
+
+    function closeDailyEvent() {
+      document.getElementById("daily-event-modal").style.display = "none";
+      playTone(500, "sine", 0.05, 0.05);
+
+      const total = cash + positionVal;
+
+      if (total <= 0 || (cash <= 0 && positionVal <= 0)) {
+        triggerEnding("bankrupt");
+        return;
+      }
+
+      if (stress >= 100) {
+        triggerEnding("hospital");
+        return;
+      }
+
+      day++;
+      if (day > maxDays) {
+        cash += positionVal;
+        positionVal = 0;
+        positionCost = 0;
+        triggerEnding(cash >= 5000000 ? "god" : (cash >= 1500000 ? "winner" : "loser"));
+      } else {
+        document.getElementById("chart-day").innerText = `剩餘: ${Math.max(0, maxDays - day + 1)} / ${maxDays} 交易日`;
+        checkAndTriggerMajorEvent();
+      }
+    }
+
+    function tradeStock(dir, isChatBlind = false) {
+      if (cash < 10000) {
+        showBigAlert("💸 破產窮鬼警報！", "{NAME}，你的可用現金不足 $10,000！無法下單！請先賣股票或去黑市借錢！");
+        return;
+      }
+
+      const maxPossibleBet = Math.floor(cash / 1.005);
+      let betAmount = Math.min(maxPossibleBet, currentSelectedBetAmount);
+
+      if (betAmount < 10000) {
+        betAmount = maxPossibleBet;
+      }
+
+      const fee = Math.round(betAmount * 0.005);
+      cash = Math.max(0, cash - (betAmount + fee));
+
+      playTone(520, "square", 0.05, 0.1);
+      positionCost += betAmount;
+      positionVal += betAmount;
+      positionDirection = dir;
+
+      let actionDesc = dir === 'long' ? '🔥 不上車一輩子撿角 (做多)' : '📉 空軍總司令開扁 (放空)';
+      let log = `【${actionDesc}】${stockDB[selectedStock].name} (投入 $${betAmount.toLocaleString()}，手續稅費 $${fee})！`;
+      
+      stress = Math.min(100, stress + 12);
+      advanceDay(log, isChatBlind ? 'chat' : (dir === 'long' ? 'long' : 'short'));
+    }
+
+    function triggerChatGamble() {
+      if (cash < 10000) {
+        showBigAlert("💸 沒錢給酸民亂搞了！", "錢包空空如也，聊天室觀眾拒絕替身無分文的 {NAME} 背黑鍋！");
+        return;
+      }
+      playTone(700, "square", 0.1, 0.15);
+      const dirs = ['long', 'short'];
+      const chosenDir = dirs[Math.floor(Math.random() * dirs.length)];
+      const randomRatio = [0.35, 0.7, 1.0][Math.floor(Math.random() * 3)];
+      
+      const maxPossibleBet = Math.floor(cash / 1.005);
+      currentSelectedBetAmount = Math.max(10000, Math.floor(maxPossibleBet * randomRatio));
+      updateBetAmountDisplay();
+
+      tradeStock(chosenDir, true);
+    }
+
+    function exitStockQuick(ratio) {
+      if (positionVal <= 0) {
+        showBigAlert("👻 空手賣空氣警報！", "{NAME}，你手上連一股部位都沒有，到底是要賣給誰看？");
+        return;
+      }
+
+      const sellAmount = Math.round(positionVal * ratio);
+      const costPortion = Math.round(positionCost * ratio);
+      const pnlPortion = sellAmount - costPortion;
+      const pnlPct = costPortion > 0 ? (pnlPortion / costPortion) * 100 : 0;
+
+      const sellFee = Math.round(sellAmount * 0.005);
+      const netCashBack = Math.max(0, sellAmount - sellFee);
+
+      cash += netCashBack;
+      positionVal = Math.max(0, positionVal - sellAmount);
+      positionCost = Math.max(0, positionCost - costPortion);
+
+      if (positionVal < 500 || ratio === 1.0) {
+        positionVal = 0;
+        positionCost = 0;
+        positionDirection = 'none';
+      }
+
+      if (pnlPortion >= 0) {
+        stress = Math.max(0, stress - 15);
+      } else {
+        stress = Math.min(100, stress + 15);
+        pendingMajorTrend = 0.09;
+      }
+
+      let logTitle = ratio === 1.0 ? "🩸 全數出清換回現金" : "💰 賣出一半落袋為安";
+      let log = `【${logTitle}】變現現值 $${sellAmount.toLocaleString()} (扣稅費 $${sellFee}，現金入帳 $${netCashBack.toLocaleString()})！`;
+
+      advanceDay(log, 'exit', pnlPortion, pnlPct, true);
+    }
+
+    function passDay() {
+      playTone(400, "sine", 0.08, 0.05);
+      stress = Math.max(0, stress - 10);
+      advanceDay(`${playerName} 決定刪除看盤 App 裝死一天。只要不看就不算賠！`, 'sleep');
+    }
+
+    function useShopItem(item) {
+      if (item === 'coffee') {
+        if (cash < 15000) {
+          showBigAlert("💸 窮到喝不起咖啡！", "{NAME}，你連 15,000 元的特調冰美式跟降壓藥都買不起了！");
+          return;
+        }
+        cash -= 15000;
+        stress = Math.max(0, stress - 30);
+        soundHappyWin();
+        updateDashboard(replaceName(`${playerName} 喝下冰美式＋吞了降壓藥！心電圖迅速平復 (-30 壓力)。`));
+      } else if (item === 'cable') {
+        if (cash < 30000) {
+          showBigAlert("🔌 買不起拔線器！", "{NAME}，買物理拔線器需要 30,000 元！去跟營業員借錢吧！");
+          return;
+        }
+        cash -= 30000;
+        stress = Math.max(0, stress - 20);
+        soundSadLoss();
+        advanceDay(replaceName(`【物理拔線】只要 ${playerName} 拔掉網路線，主力就倒不了貨！本回強制作弊跳過！`), 'sleep');
+      }
+    }
+
+    function advanceDay(actionLog, eventType = 'sleep', overrideDiff = null, overridePct = null, isExitAction = false) {
+      let vol = stockDB[selectedStock].vol;
+      let isWin = Math.random() < 0.50;
+
+      let marketBias = 0;
+      if (positionVal > 0) {
+        if (isWin) {
+          marketBias = positionDirection === 'long' 
+            ? (Math.random() * 0.08 + 0.035) 
+            : -(Math.random() * 0.08 + 0.035);
+        } else {
+          marketBias = positionDirection === 'long' 
+            ? -(Math.random() * 0.09 + 0.04) 
+            : (Math.random() * 0.09 + 0.04);
+        }
+      } else {
+        marketBias = (Math.random() - 0.5) * 0.05;
+      }
+
+      let trend = marketBias * vol + pendingMajorTrend;
+      pendingMajorTrend = 0;
+
+      let o = currentStockPrice;
+      let c = Math.max(2, Math.round((o * (1 + trend)) * 10) / 10);
+      candles.push({ o, h: Math.max(o,c) + c * 0.025, l: Math.min(o,c) - c * 0.025, c });
+      if (candles.length > 20) candles.shift();
+      currentStockPrice = c;
+      renderChart();
+
+      let dayPnl = 0;
+      let dayPnlPct = 0;
+
+      if (isExitAction) {
+        dayPnl = overrideDiff !== null ? overrideDiff : 0;
+        dayPnlPct = overridePct !== null ? overridePct : 0;
+      } else if (positionVal > 0) {
+        let pct = (c - o) / o;
+        let change = positionDirection === 'long' ? pct : -pct;
+        let oldVal = positionVal;
+        positionVal = Math.max(0, positionVal * (1 + change));
+        
+        dayPnl = positionVal - oldVal;
+        dayPnlPct = change * 100;
+
+        if (dayPnl > 0) {
+          addChat(positionDirection === 'short' ? 'shortWin' : 'up');
+        } else {
+          addChat('down');
+          triggerMangaShake();
+        }
+      } else {
+        addChat('neutral');
+      }
+
+      updateDashboard(actionLog, dayPnl);
+
+      let eventCat = 'sleep';
+      if (eventType === 'chat') {
+        eventCat = dayPnl >= 0 ? 'chatProfit' : 'chatLoss';
+      } else if (eventType === 'sleep') {
+        eventCat = 'sleep';
+      } else {
+        eventCat = dayPnl >= 0 ? 'profit' : 'loss';
+      }
+
+      triggerDailyEventModal(eventCat, dayPnl, dayPnlPct, isExitAction, c - o);
+    }
+
+    function triggerMangaShake() {
+      const mon = document.getElementById("screen-container");
+      mon.classList.add("shake-manga");
+      setTimeout(() => mon.classList.remove("shake-manga"), 350);
+    }
+
+    let hasTriggeredMarginCallToday = false;
+
+    function updateDashboard(log, currentDayPnl = 0) {
+      const total = Math.round(cash + positionVal);
+      document.getElementById("val-total").innerText = `$${total.toLocaleString()}`;
+
+      // 🚨 倉位百分比修正：精確顯示到小數點第一位 (例如 10.0%, 1.0%)
+      const posPct = total > 0 ? ((positionVal / total) * 100).toFixed(1) : "0.0";
+      document.getElementById("val-cash-pos").innerText = `$${Math.round(cash).toLocaleString()} / ${posPct}%`;
+
+      const unpnl = Math.round(positionVal - positionCost);
+      const unEl = document.getElementById("val-unrealized");
+      if (positionVal === 0) {
+        unEl.innerText = "$0 (0.0%)";
+        unEl.style.color = "var(--text-dim)";
+      } else {
+        const sign = unpnl >= 0 ? "+" : "";
+        const pct = positionCost > 0 ? ((unpnl / positionCost) * 100).toFixed(1) : "0.0";
+        unEl.innerText = `${sign}$${unpnl.toLocaleString()} (${sign}${pct}%)`;
+        unEl.style.color = unpnl >= 0 ? "var(--anime-red)" : "var(--anime-green)";
+      }
+
+      updateBetAmountDisplay();
+
+      const isCashBroke = cash < 10000;
+      document.getElementById("btn-buy-long").disabled = isCashBroke;
+      document.getElementById("btn-buy-short").disabled = isCashBroke;
+
+      const isPositionEmpty = positionVal <= 0;
+      document.getElementById("btn-sell-half").disabled = isPositionEmpty;
+      document.getElementById("btn-sell-all").disabled = isPositionEmpty;
+
+      const speechBox = document.getElementById("event-desc");
+      speechBox.innerText = replaceName(log);
+      if (currentDayPnl > 0) {
+        speechBox.style.background = "#fff1f2";
+        speechBox.style.borderColor = "var(--anime-red)";
+        speechBox.style.color = "#991b1b";
+      } else if (currentDayPnl < 0) {
+        speechBox.style.background = "#f0fdf4";
+        speechBox.style.borderColor = "var(--anime-green)";
+        speechBox.style.color = "#166534";
+      } else {
+        speechBox.style.background = "#fff";
+        speechBox.style.borderColor = "#000";
+        speechBox.style.color = "#000";
+      }
+
+      if (total <= 300000 && total > 0 && !hasTriggeredMarginCallToday) {
+        hasTriggeredMarginCallToday = true;
+        triggerMarginCall();
+      }
+
+      if (stress >= 80 || unpnl < -150000) {
+        updateAnimeFace('crazy');
+      } else if (unpnl > 40000) {
+        updateAnimeFace('profit');
+      } else if (unpnl < -30000) {
+        updateAnimeFace('loss');
+      } else {
+        updateAnimeFace('neutral');
+      }
+    }
+
+    function triggerMarginCall() {
+      soundSadLoss();
+      document.getElementById("margin-call-msg").innerText = replaceName(`「${playerName} 哥／姐，您的帳戶維持率已經掉到 125% 以下囉！明天中午前沒補 20 萬現金進來，我們就要強制斷頭砍倉囉～啾咪♥」`);
+      document.getElementById("margin-call-modal").style.display = "flex";
+      speakLine(`${playerName}！您的帳戶維持率不足，營業員來電追繳囉！`);
+    }
+
+    function closeMarginCall() {
+      document.getElementById("margin-call-modal").style.display = "none";
+      playTone(500, "sine", 0.05, 0.05);
+    }
+
+    function triggerEnding(type) {
+      const modal = document.getElementById("end-modal");
+      const title = document.getElementById("end-title");
+      const content = document.getElementById("end-content");
+      const card = document.getElementById("end-modal-card");
+      modal.style.display = "flex";
+
+      const finalTotal = Math.round(cash + positionVal);
+
+      if (type === "bankrupt") {
+        card.style.borderColor = "#ff2a4b";
+        title.innerText = "🩸 歸零斷頭！全台最速破產實況主！";
+        title.style.color = "#ff2a4b";
+        content.innerHTML = `
+          <b>戰犯本尊：</b> ${playerName}<br>
+          <b>起始本金：</b> $1,000,000 TWD<br>
+          <b>最終殘值：</b> <span style="color: #ff2a4b; font-size: 1.5rem; font-weight: 900;">$0 TWD (血本無歸)</span><br>
+          <b>心電圖診斷：</b> 呈水平直線（Flatline 0 BPM 判定死亡）<br>
+          <b>公審評語：</b><br>
+          哈哈哈哈哈！這操作我看傻了！一百萬本金直接歸零送進大戶口袋！<br>
+          聊天室全體起立鼓掌！恭喜 ${playerName} 榮登本屆【阿呆谷無情接刀總冠軍】！<br>
+          大都會公園的加厚紙箱已經幫您鋪好，快去排隊領便當吧！下去！
+        `;
+        soundSadLoss();
+        triggerMangaShake();
+        speakLine(`哈哈哈哈！一百萬直接賠到精光！${playerName}當場畢業歸零，公園加厚紙箱已經發牌，全體起立嘲笑！下去！`);
+      } else if (type === "hospital") {
+        title.innerText = "急診搶救通知書 (跨作聯動)";
+        content.innerHTML = `
+          <b>病患姓名：</b> ${playerName}<br>
+          <b>轉送診間：</b> 《急診當值：深更半夜》第一急救室<br>
+          <b>心電圖診斷：</b> 心室顫動狂飆至 240 BPM！<br>
+          <b>值班醫師評語：</b> 「叫你買 0050 不聽，非要去當沖開槓桿！${playerName}，除顫器 200 焦耳準備……」
+        `;
+        speakLine(`救護車鳴笛！${playerName}已送達隔壁急診室！`);
+      } else if (type === "god") {
+        title.innerText = `🏆 30 天滿期封神：${playerName} 全台第一少年股神！`;
+        content.innerHTML = `
+          <b>傳奇得主：</b> ${playerName}<br>
+          <b>30天最終總資產：</b> $${finalTotal.toLocaleString()} TWD<br>
+          <b>心電圖診斷：</b> 禪定波形，心跳穩定 55 BPM。<br>
+          <b>評語：</b> 不可思議！你在狂暴巨浪的極限行情中殺出重圍！大戶直接向你認輸！
+        `;
+        soundHappyWin();
+        speakLine(`狂賀！${playerName}受封全台第一少年股神！`);
+      } else if (type === "winner") {
+        title.innerText = `📈 30 天滿期：${playerName} 精明市場贏家`;
+        content.innerHTML = `
+          <b>交易員：</b> ${playerName}<br>
+          <b>30天最終總資產：</b> $${finalTotal.toLocaleString()} TWD<br>
+          <b>評語：</b> 懂得在巨幅震盪中保住老本甚至獲利，這波操作證明你已超越全台 95% 的散戶韭菜！
+        `;
+        soundHappyWin();
+        speakLine(`表現不錯！${playerName}成功超越九成散戶！`);
+      } else {
+        title.innerText = `💸 30 天滿期：${playerName} 韭菜畢業證書`;
+        content.innerHTML = `
+          <b>學員：</b> ${playerName}<br>
+          <b>30天最終總資產：</b> $${finalTotal.toLocaleString()} TWD<br>
+          <b>評語：</b> 追高殺低、聽信聊天室盲選的下場就是淪為大戶的養分。幸好沒去借高利貸，${playerName} 明天還是得老老實實打卡上班！
+        `;
+        soundSadLoss();
+        speakLine(`哈哈哈哈！${playerName}被市場割得乾乾淨淨，明天準時上班打卡吧！`);
+      }
+    }
+
+    function restartGame() {
+      day = 1;
+      cash = 1000000;
+      stress = 20;
+      currentSelectedBetAmount = 300000;
+      hasTriggeredMarginCallToday = false;
+      positionCost = 0;
+      positionVal = 0;
+      positionDirection = 'none';
+      pendingMajorTrend = 0;
+      usedMajorEvents = [];
+      nextMajorEventDays = 2;
+      ecgPoints = [];
+      document.getElementById("end-modal").style.display = "none";
+      document.getElementById("daily-event-modal").style.display = "none";
+      document.getElementById("major-event-modal").style.display = "none";
+      document.getElementById("custom-alert-modal").style.display = "none";
+      document.getElementById("margin-call-modal").style.display = "none";
+      document.getElementById("custom-stock-input-modal").style.display = "none";
+      
+      document.getElementById("streamer-name-input").value = "";
+      playerName = "";
+      document.getElementById("player-display-tag").innerText = "實況主: 待命名";
+
+      switchBGM('menu');
+      document.getElementById("start-modal").style.display = "flex";
+      updateAnimeFace('neutral');
+    }
+
+    window.addEventListener('resize', () => {
+      resizeCanvas();
+      renderChart();
+    });
+
+    window.addEventListener('click', () => {
+      initAudio();
+      if (!currentBgmInterval && !isAudioMuted) {
+        switchBGM('menu');
+      }
+    }, { once: true });
+
+    updateAnimeFace('neutral');
+    setTimeout(() => {
+      resizeCanvas();
+      initChart();
+      updateDashboard("全新開局！請透過按鈕設定下單金額後進場單挑！");
+    }, 100);
+  </script>
+</body>
+</html>
